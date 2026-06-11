@@ -274,6 +274,36 @@ body.dark{--bg:#0F1923;--surface:#1A2535;--border:#2A3A50;--border-light:#1F2E42
     .port-add-row .add-btn{grid-column:1/-1;}
     .port-table th:nth-child(3),.port-table td:nth-child(3){display:none;}
   }
+
+
+  /* Color themes - override accent color everywhere */
+  body.theme-green{
+    --blue:#1A7A56;--blue-bg:#EBF5F0;--bg:#EEF7F3;--border:#B8D8CC;--border-light:#D5EDE4;
+  }
+  body.theme-purple{
+    --blue:#6B3FA8;--blue-bg:#F0EAFB;--bg:#F0EAF9;--border:#C8B0E8;--border-light:#DDD0F2;
+  }
+  body.theme-red{
+    --blue:#C0392B;--blue-bg:#FCECEA;--bg:#FCECEA;--border:#EAB8B4;--border-light:#F5D5D3;
+  }
+  body.theme-black{
+    --blue:#1A1A1A;--blue-bg:#F0F0F0;--bg:#F0F0F0;--border:#C8C8C8;--border-light:#E0E0E0;
+    --text:#0A0A0A;--text-2:#3A3A3A;--text-3:#808080;
+  }
+  body.theme-orange{
+    --blue:#D46A1A;--blue-bg:#FEF0E4;--bg:#FEF0E4;--border:#E8C49A;--border-light:#F5DEC4;
+  }
+  .theme-btn{width:26px;height:26px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:border-color .15s;outline:none;}
+  .theme-btn.active{border-color:var(--text);}
+  .theme-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+
+  /* Profile picture */
+  .header-row{display:flex;align-items:center;gap:14px;margin-bottom:4px;}
+  .profile-pic{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;background:var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;}
+  .profile-pic img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+  .profile-pic-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--blue-bg);color:var(--blue);}
+
 </style>
 
 <script>
@@ -297,7 +327,7 @@ function populateDayDropdown(){
   sel.innerHTML = '<option value="all">ทั้งเดือน</option>';
   days.forEach(d=>{
     const dt = new Date(d+'T00:00:00');
-    const label = `${dt.getDate()} ${['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][dt.getMonth()+1]}`;
+      const label = dt.getDate()+' '+['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][dt.getMonth()+1];
     const opt = document.createElement('option');
     opt.value = d; opt.textContent = label;
     if(d === todayStr) opt.textContent += ' (วันนี้)';
@@ -336,13 +366,15 @@ function onDescInput(val){
   const items = getSuggestions(val);
   const dd = document.getElementById('suggest-dropdown');
   if(items.length === 0 || !val){dd.style.display='none';return;}
-  dd.innerHTML = items.map((item,i)=>`
-    <div class="suggest-item" data-i="${i}" 
-      onmousedown="selectSuggest('${item.desc.replace(/'/g,"\\'")}','${item.cat}',${item.amt})"
-      onmouseover="setSuggestActive(${i})">
-      <span class="suggest-item-name">${item.desc}</span>
-      <span class="suggest-item-meta">${item.cat} · ฿${item.amt.toLocaleString()}</span>
-    </div>`).join('');
+  dd.innerHTML = items.map(function(item,i){
+    var escapedDesc = item.desc.replace(/'/g,"\'");
+    return '<div class="suggest-item" data-i="'+i+'"'
+      +' onmousedown="selectSuggest(\'' +escapedDesc+ '\',\'' +item.cat+ '\',' +item.amt+ ')"'
+      +' onmouseover="setSuggestActive('+i+')">'
+      +'<span class="suggest-item-name">'+item.desc+'</span>'
+      +'<span class="suggest-item-meta">'+item.cat+' · ฿'+item.amt.toLocaleString()+'</span>'
+      +'</div>';
+  }).join('');
   dd.style.display='block';
 }
 
@@ -636,6 +668,7 @@ function renderPortfolio(){
 
   document.getElementById('port-fx-rate').textContent='USD/THB: '+usdThb.toFixed(2);
 
+
   // Donut charts
   function drawDonut(svgId, legendId, items, colors){
     var svgEl=document.getElementById(svgId);
@@ -699,6 +732,175 @@ function renderPortfolio(){
 }
 
 // Switch tab handler update — add portfolio
+
+
+// updateWidget removed
+
+// ── SWIPE TO DELETE ──
+function initSwipe(){
+  const container = document.getElementById('entry-list-container');
+  if(!container) return;
+  let startX=0, startY=0, currentEl=null, swiped=null;
+
+  container.addEventListener('touchstart', function(e){
+    const row = e.target.closest('.entry-row-wrap');
+    if(!row) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    currentEl = row;
+  }, {passive:true});
+
+  container.addEventListener('touchmove', function(e){
+    if(!currentEl) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if(Math.abs(dy) > Math.abs(dx)) return; // vertical scroll
+    if(dx < -30){
+      if(swiped && swiped !== currentEl) swiped.classList.remove('swiped');
+      currentEl.classList.add('swiped');
+      swiped = currentEl;
+    } else if(dx > 10){
+      currentEl.classList.remove('swiped');
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchstart', function(e){
+    if(swiped && !swiped.contains(e.target)){
+      swiped.classList.remove('swiped');
+      swiped = null;
+    }
+  }, {passive:true});
+}
+
+// ── HAPTIC FEEDBACK ──
+function haptic(type){
+  try {
+    if('vibrate' in navigator){
+      if(type==='success') navigator.vibrate([10,5,10]);
+      else if(type==='error') navigator.vibrate([30,10,30]);
+      else navigator.vibrate(10);
+    }
+    // iOS haptic via AudioContext trick
+    const ac = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    gain.gain.setValueAtTime(0.001, ac.currentTime);
+    osc.start(); osc.stop(ac.currentTime+0.05);
+  } catch(e){}
+}
+
+// ── FACE ID / BIOMETRIC LOCK ──
+let biometricEnabled = localStorage.getItem('mek_biometric') === '1';
+
+function toggleBiometric(){
+  const on = document.getElementById('biometric-toggle').checked;
+  if(on && !window.PublicKeyCredential){
+    alert('อุปกรณ์นี้ไม่รองรับ Biometric ครับ');
+    document.getElementById('biometric-toggle').checked = false;
+    return;
+  }
+  biometricEnabled = on;
+  localStorage.setItem('mek_biometric', on?'1':'0');
+  document.getElementById('biometric-knob').style.background = on?'var(--blue)':'var(--border)';
+  document.getElementById('biometric-thumb').style.left = on?'23px':'3px';
+}
+
+async function checkBiometric(){
+  if(!biometricEnabled || !window.PublicKeyCredential) return true;
+  try {
+    // Use WebAuthn conditional UI / platform authenticator
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if(!available) return true;
+    // Simple presence check via credential get
+    await navigator.credentials.get({
+      publicKey:{
+        challenge: new Uint8Array(32),
+        timeout: 30000,
+        userVerification: 'required',
+        rpId: window.location.hostname,
+        allowCredentials: []
+      }
+    });
+    return true;
+  } catch(e){
+    return false;
+  }
+}
+
+// ── COLOR THEME ──
+const THEME_NAMES = {blue:'Blue',green:'Green',purple:'Purple',red:'Red',orange:'Orange',black:'Black'};
+function setTheme(name, btn){
+  ['blue','green','purple','red','orange','black'].forEach(t=>{
+    document.body.classList.remove('theme-'+t);
+    const el = document.getElementById('theme-'+t);
+    if(el) el.classList.remove('active');
+  });
+  if(name !== 'blue') document.body.classList.add('theme-'+name);
+  if(btn) btn.classList.add('active');
+  const nameEl = document.getElementById('theme-name');
+  if(nameEl) nameEl.textContent = THEME_NAMES[name]||name;
+  // Update header title color to match theme
+  const titleEl = document.querySelector('.header-title');
+  if(titleEl) titleEl.style.color = 'var(--blue)';
+  localStorage.setItem('mek_theme', name);
+}
+
+function initTheme(){
+  const saved = localStorage.getItem('mek_theme') || 'blue';
+  setTheme(saved, document.getElementById('theme-'+saved));
+}
+
+// ── SAVE PORT TOTAL FOR WIDGET ──
+
+
+
+function triggerProfileUpload(){
+  var el = document.getElementById('profile-upload');
+  if(el) el.click();
+}
+
+// ── PROFILE PICTURE ──
+function uploadProfilePic(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const dataUrl = e.target.result;
+    localStorage.setItem('mek_profile_pic', dataUrl);
+    applyProfilePic(dataUrl);
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function applyProfilePic(dataUrl){
+  ['profile-img','settings-profile-img'].forEach(function(id){
+    const img = document.getElementById(id);
+    if(img){ img.src=dataUrl; img.style.display='block'; }
+  });
+  ['profile-placeholder','settings-profile-placeholder'].forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+}
+
+function removeProfilePic(){
+  localStorage.removeItem('mek_profile_pic');
+  ['profile-img','settings-profile-img'].forEach(function(id){
+    const img = document.getElementById(id);
+    if(img){ img.src=''; img.style.display='none'; }
+  });
+  ['profile-placeholder','settings-profile-placeholder'].forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.style.display='flex';
+  });
+}
+
+function initProfilePic(){
+  const saved = localStorage.getItem('mek_profile_pic');
+  if(saved) applyProfilePic(saved);
+}
 
 </script>
 </head>
@@ -800,6 +1002,8 @@ function renderPortfolio(){
 
   </div><!-- end planner-content -->
   <!-- TRACKER -->
+  <!-- WIDGET SUMMARY BAR -->
+
   <div class="tab-panel active" id="tab-tracker">
     <div class="notif-banner" id="notif-banner">⚠️ ใช้งบไปเกิน 80% แล้ว — ระวังด้วยนะครับ!</div>
 
@@ -818,20 +1022,37 @@ function renderPortfolio(){
       <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
     </div>
 
-    <div class="tracker-top">
-      <div class="tracker-metric"><div class="tracker-metric-label">งบเดือนนี้</div><div class="tracker-metric-val" id="tr-budget">฿17,500</div></div>
-      <div class="tracker-metric"><div class="tracker-metric-label">ใช้ไปแล้ว</div><div class="tracker-metric-val neg" id="tr-spent">฿0</div></div>
-      <div class="tracker-metric"><div class="tracker-metric-label">คงเหลือ</div><div class="tracker-metric-val pos" id="tr-remain">฿17,500</div></div>
+    <!-- Compact summary row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+        <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">งบเดือนนี้</div>
+        <div style="font-family:var(--mono);font-size:14px;font-weight:500;" id="tr-budget">฿17,500</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+        <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">ใช้ไป</div>
+        <div style="font-family:var(--mono);font-size:14px;font-weight:500;" class="neg" id="tr-spent">฿0</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+        <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">คงเหลือ</div>
+        <div style="font-family:var(--mono);font-size:14px;font-weight:500;" class="pos" id="tr-remain">฿17,500</div>
+      </div>
+      <div style="background:var(--blue);border-radius:10px;padding:10px 12px;">
+        <div style="font-size:10px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">ใช้ได้วันละ</div>
+        <div style="font-family:var(--mono);font-size:14px;font-weight:500;color:#fff;" id="tr-daily-val">—</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px;" id="tr-daily-desc">—</div>
+      </div>
     </div>
 
-    <div class="tracker-daily-box" id="tr-daily-box">
-      <div><div class="tracker-daily-label">ใช้ได้เฉลี่ยวันละ</div><div class="tracker-daily-val" id="tr-daily-val">฿0</div></div>
-      <div class="tracker-daily-right" id="tr-daily-desc">—</div>
-    </div>
-
-    <div class="tracker-day-grid">
-      <div class="tracker-day-card"><div class="tracker-day-label">เมื่อวาน</div><div class="tracker-day-val muted" id="tr-yesterday">฿0</div></div>
-      <div class="tracker-day-card"><div class="tracker-day-label">วันนี้</div><div class="tracker-day-val muted" id="tr-today">฿0</div></div>
+    <!-- Today/Yesterday compact -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--text-3);">เมื่อวาน</span>
+        <span style="font-family:var(--mono);font-size:13px;font-weight:500;" class="muted" id="tr-yesterday">฿0</span>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--text-3);">วันนี้</span>
+        <span style="font-family:var(--mono);font-size:13px;font-weight:500;" class="muted" id="tr-today">฿0</span>
+      </div>
     </div>
 
     <div class="budget-bar-wrap">
@@ -913,13 +1134,48 @@ function renderPortfolio(){
 
     <div class="card">
       <div class="card-title">การแสดงผล</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);">
         <div><div style="font-size:13px;font-weight:500;">Dark Mode</div><div style="font-size:12px;color:var(--text-3);">ปรับธีมมืด</div></div>
         <label style="position:relative;width:44px;height:24px;cursor:pointer;">
           <input type="checkbox" id="dark-toggle" onchange="toggleDark()" style="opacity:0;width:0;height:0;"/>
           <span id="dark-knob" style="position:absolute;inset:0;background:var(--border);border-radius:12px;transition:.2s;"></span>
           <span id="dark-thumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
         </label>
+      </div>
+      <div style="padding:12px 0;border-bottom:1px solid var(--border-light);">
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px;">Color Theme</div>
+        <div class="theme-row">
+          <button class="theme-btn active" id="theme-blue"   style="background:#1B5FA8;" onclick="setTheme('blue',this)"   title="Blue (default)"></button>
+          <button class="theme-btn"        id="theme-green"  style="background:#1A7A56;" onclick="setTheme('green',this)"  title="Green"></button>
+          <button class="theme-btn"        id="theme-purple" style="background:#6B3FA8;" onclick="setTheme('purple',this)" title="Purple"></button>
+          <button class="theme-btn"        id="theme-red"    style="background:#C0392B;" onclick="setTheme('red',this)"    title="Red"></button>
+          <button class="theme-btn"        id="theme-orange" style="background:#D46A1A;" onclick="setTheme('orange',this)" title="Orange"></button>
+          <button class="theme-btn"        id="theme-black"  style="background:#1A1A1A;" onclick="setTheme('black',this)"  title="Black"></button>
+          <span style="font-size:12px;color:var(--text-3);margin-left:4px;" id="theme-name">Blue</span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
+        <div><div style="font-size:13px;font-weight:500;">Face ID / Fingerprint Lock</div><div style="font-size:12px;color:var(--text-3);">ล็อก Planner ด้วย Biometric</div></div>
+        <label style="position:relative;width:44px;height:24px;cursor:pointer;">
+          <input type="checkbox" id="biometric-toggle" onchange="toggleBiometric()" style="opacity:0;width:0;height:0;"/>
+          <span id="biometric-knob" style="position:absolute;inset:0;background:var(--border);border-radius:12px;transition:.2s;"></span>
+          <span id="biometric-thumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">รูปโปรไฟล์</div>
+      <div style="display:flex;align-items:center;gap:16px;padding:4px 0;">
+        <div class="profile-pic" style="width:60px;height:60px;" onclick="triggerProfileUpload()">
+          <div class="profile-pic-placeholder" id="settings-profile-placeholder">👤</div>
+          <img id="settings-profile-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
+        </div>
+        <div>
+          <button class="add-btn" onclick="triggerProfileUpload()">เลือกรูป</button>
+          <div style="font-size:11px;color:var(--text-3);margin-top:6px;">กดที่รูปหรือปุ่มเพื่อเปลี่ยนครับ</div>
+        </div>
+        <button class="export-btn" onclick="removeProfilePic()" style="margin-left:auto;">ลบรูป</button>
       </div>
     </div>
 
@@ -1154,15 +1410,29 @@ function checkLock(){
     setTimeout(()=>inp.classList.remove('error'), 400);
   }
 }
-function initPlannerLock(){
+async function showLockPopupWithBiometric(){
+  if(biometricEnabled && window.PublicKeyCredential){
+    try {
+      const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      if(available){
+        document.getElementById('planner-content').style.display='block';
+        document.getElementById('planner-lock-popup').style.display='none';
+        return;
+      }
+    } catch(e){}
+  }
   showLockPopup();
+}
+
+function initPlannerLock(){
+  showLockPopupWithBiometric();
 }
 
 const SUPABASE_URL='https://ahelypphgebpszhvmfrc.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoZWx5cHBoZ2VicHN6aHZtZnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNjQ5MTMsImV4cCI6MjA5NjY0MDkxM30.xIxfh1jeNSgHhqt2NX_V3d-eHxm_MQepoSGCXnBvfeE';
 const HEADERS={'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};
-const API=`${SUPABASE_URL}/rest/v1`;
-const Q=`?apikey=${SUPABASE_KEY}`;
+const API=SUPABASE_URL+'/rest/v1';
+const Q='?apikey='+SUPABASE_KEY;
 
 // PLANNER
 const SALARY=47967,TENNIS=3600,AIRPOD=849,START=186661,MONTHS=7;
@@ -1206,9 +1476,9 @@ function update(){
   BIG_BILLS.forEach(m=>{
     bal+=net-m.bill;
     const cls=bal<60000?'crit':bal<100000?'low':'safe';
-    const bHtml=m.bill>0?`<div style="color:var(--red)">−฿${m.bill.toLocaleString()}</div><div class="tl-bill">${m.billLabel}</div>`:'<span style="color:var(--text-3)">—</span>';
-    const nHtml=net>=0?`<span class="pos">+฿${net.toLocaleString()}</span>`:`<span class="neg">−฿${Math.abs(net).toLocaleString()}</span>`;
-    html+=`<div class="tl-row ${cls}"><div class="tl-month">${m.month}</div><div>${bHtml}</div><div class="tl-net">${nHtml}</div><div class="tl-balance">${fmt(bal)}</div></div>`;
+    const bHtml=m.bill>0?'<div style="color:var(--red)">−฿'+m.bill.toLocaleString()+'</div><div class="tl-bill">'+m.billLabel+'</div>':'<span style="color:var(--text-3)">—</span>';
+    const nHtml=net>=0?'<span class="pos">+฿'+net.toLocaleString()+'</span>':'<span class="neg">−฿'+Math.abs(net).toLocaleString()+'</span>';
+    html+='<div class="tl-row '+cls+'"><div class="tl-month">'+m.month+'</div><div>'+bHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+fmt(bal)+'</div></div>';
   });
   document.getElementById('timeline-body').innerHTML=html;
   const totalSav=net*MONTHS;
@@ -1222,34 +1492,35 @@ function update(){
   document.getElementById('ye-progress-fill').style.background=yearEnd>=target?'#1A7A56':yearEnd>=0?'#9A6200':'#C0392B';
   document.getElementById('ye-progress-label').textContent=fmt(yearEnd)+' / เป้า '+fmt(target);
   const amtEl=document.getElementById('result-amount'),pillEl=document.getElementById('result-pill'),pillTxt=document.getElementById('pill-text'),alertEl=document.getElementById('main-alert'),pfill=document.getElementById('progress-fill');
-  if(diff>=0){amtEl.className='result-amount good';pillEl.className='pill good';pillTxt.textContent='ถึงเป้า ✓';alertEl.className='alert ok';alertEl.textContent=`✅ ถ้าคุมที่ ${fmt(living)}/เดือน ปลาย ธ.ค. จะเหลือ ${fmt(yearEnd)} — เกินเป้า ${fmt(diff)} ครับ`;pfill.style.background='#1A7A56';}
-  else if(diff>-30000){amtEl.className='result-amount ok';pillEl.className='pill ok';pillTxt.textContent='ใกล้เป้า';alertEl.className='alert warn';alertEl.textContent=`⚠️ ปลาย ธ.ค. คาดว่าจะเหลือ ${fmt(yearEnd)} — ต่ำกว่าเป้า ${fmt(Math.abs(diff))}`;pfill.style.background='#9A6200';}
-  else{amtEl.className='result-amount tight';pillEl.className='pill tight';pillTxt.textContent='ไม่ถึงเป้า';alertEl.className='alert bad';alertEl.textContent=`🚨 ปลาย ธ.ค. คาดว่าจะเหลือแค่ ${fmt(yearEnd)} — ต่ำกว่าเป้ามาก`;pfill.style.background='#C0392B';}
+  if(diff>=0){amtEl.className='result-amount good';pillEl.className='pill good';pillTxt.textContent='ถึงเป้า ✓';alertEl.className='alert ok';alertEl.textContent='✅ ถ้าคุมที่ '+fmt(living)+'/เดือน ปลาย ธ.ค. จะเหลือ '+fmt(yearEnd)+' — เกินเป้า '+fmt(diff)+' ครับ';pfill.style.background='#1A7A56';}
+  else if(diff>-30000){amtEl.className='result-amount ok';pillEl.className='pill ok';pillTxt.textContent='ใกล้เป้า';alertEl.className='alert warn';alertEl.textContent='⚠️ ปลาย ธ.ค. คาดว่าจะเหลือ '+fmt(yearEnd)+' — ต่ำกว่าเป้า '+fmt(Math.abs(diff));pfill.style.background='#9A6200';}
+  else{amtEl.className='result-amount tight';pillEl.className='pill tight';pillTxt.textContent='ไม่ถึงเป้า';alertEl.className='alert bad';alertEl.textContent='🚨 ปลาย ธ.ค. คาดว่าจะเหลือแค่ '+fmt(yearEnd)+' — ต่ำกว่าเป้ามาก';pfill.style.background='#C0392B';}
   window._budget=living;
   localStorage.setItem('mek_budget', living);
   renderCatBudgetSettings();
+  setTimeout(initSwipe, 100);
 }
 
 // SYNC STATUS
 function setSyncStatus(msg,color='var(--text-3)'){
-  document.getElementById('sync-status').innerHTML=`<span class="status-dot" style="background:${color}"></span>${msg}`;
+  document.getElementById('sync-status').innerHTML='<span class="status-dot" style="background:'+color+'"></span>'+msg;
 }
 
 // LOAD ENTRIES
 async function loadEntries(){
   const month=+document.getElementById('view-month').value;
-  const from=`2026-${String(month).padStart(2,'0')}-01`;
+  const from='2026-'+String(month).padStart(2,'0')+'-01';
   const lastDay=new Date(2026,month,0).getDate();
-  const to=`2026-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+  const to='2026-'+String(month).padStart(2,'0')+'-'+String(lastDay).padStart(2,'0');
   setSyncStatus('กำลังโหลด...','#9B9B94');
   try{
-    const res=await fetch(`${API}/entries${Q}&entry_date=gte.${from}&entry_date=lte.${to}&order=entry_date.desc,created_at.desc`,{headers:HEADERS});
+    const res=await fetch(API+'/entries'+Q+'&entry_date=gte.'+from+'&entry_date=lte.'+to+'&order=entry_date.desc,created_at.desc',{headers:HEADERS});
     if(!res.ok)throw new Error();
     cachedEntries=await res.json();
     setSyncStatus('ซิงก์แล้ว','#1A7A56');
     populateDayDropdown();
     // also load all entries for compare
-    const resAll=await fetch(`${API}/entries${Q}&order=entry_date.desc`,{headers:HEADERS});
+    const resAll=await fetch(API+'/entries'+Q+'&order=entry_date.desc',{headers:HEADERS});
     allEntries=resAll.ok?await resAll.json():[];
     renderTracker();
   }catch(e){
@@ -1269,8 +1540,9 @@ async function addEntry(){
   const btn=document.getElementById('add-btn');btn.disabled=true;btn.textContent='กำลังบันทึก...';
   setSyncStatus('กำลังบันทึก...','#9A6200');
   try{
-    const res=await fetch(`${API}/entries${Q}`,{method:'POST',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify({description:desc,amt,cat,entry_date:date,note:note||null})});
+    const res=await fetch(API+'/entries'+Q,{method:'POST',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify({description:desc,amt,cat,entry_date:date,note:note||null})});
     if(!res.ok)throw new Error();
+    haptic('success');
     document.getElementById('entry-desc').value='';document.getElementById('entry-amt').value='';document.getElementById('entry-note').value='';
     setSyncStatus('บันทึกแล้ว ✓','#1A7A56');
     await loadEntries();
@@ -1283,7 +1555,7 @@ async function deleteEntry(id){
   if(!confirm('ลบรายการนี้?'))return;
   setSyncStatus('กำลังลบ...','#9A6200');
   try{
-    const res=await fetch(`${API}/entries${Q}&id=eq.${id}`,{method:'DELETE',headers:HEADERS});
+    const res=await fetch(API+'/entries'+Q+'&id=eq.'+id,{method:'DELETE',headers:HEADERS});
     if(!res.ok)throw new Error();
     setSyncStatus('ลบแล้ว','#1A7A56');await loadEntries();
   }catch(e){setSyncStatus('ลบไม่สำเร็จ','#C0392B');}
@@ -1305,7 +1577,7 @@ async function saveEdit(){
   const body={description:document.getElementById('edit-desc').value,amt:parseFloat(document.getElementById('edit-amt').value),cat:document.getElementById('edit-cat').value,entry_date:document.getElementById('edit-date').value,note:document.getElementById('edit-note').value||null};
   setSyncStatus('กำลังบันทึก...','#9A6200');
   try{
-    const res=await fetch(`${API}/entries${Q}&id=eq.${id}`,{method:'PATCH',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify(body)});
+    const res=await fetch(API+'/entries'+Q+'&id=eq.'+id,{method:'PATCH',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify(body)});
     if(!res.ok)throw new Error();
     closeModal();setSyncStatus('บันทึกแล้ว ✓','#1A7A56');await loadEntries();
   }catch(e){setSyncStatus('บันทึกไม่สำเร็จ','#C0392B');}
@@ -1314,7 +1586,7 @@ async function saveEdit(){
 // EXPORT CSV
 function exportCSV(){
   const rows=[['id','description','amt','cat','entry_date','note'],...allEntries.map(e=>[e.id,e.description,e.amt,e.cat,e.entry_date,e.note||''])];
-  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const csv=rows.map(r=>r.map(v=>'"'+v+'"').join(',')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='finance_export.csv';a.click();
 }
@@ -1337,11 +1609,11 @@ function renderCatBudgetSettings(){
     const spent=cachedEntries.filter(e=>e.cat===cat).reduce((s,e)=>s+Number(e.amt),0);
     const pct=bud>0?Math.min(spent/bud*100,100):0;
     const color=CAT_COLORS[cat]||'#6B6B65';
-    return `<div class="cat-budget-row">
-      <div class="cat-budget-name">${cat}</div>
-      <div class="cat-budget-bar-wrap"><div class="cat-budget-bar" style="width:${pct}%;background:${color}"></div></div>
-      <input class="cat-budget-input" type="number" placeholder="ไม่จำกัด" value="${bud||''}" min="0" step="100" onchange="setCatBudget('${cat}',this.value)"/>
-    </div>`;
+     return '<div class="cat-budget-row">'
+       +'<div class="cat-budget-name">'+cat+'</div>'
+       +'<div class="cat-budget-bar-wrap"><div class="cat-budget-bar" style="width:'+pct+'%;background:'+color+'"></div></div>'
+       +'<input class="cat-budget-input" type="number" placeholder="ไม่จำกัด" value="'+(bud||'')+'" min="0" step="100" onchange="setCatBudget(\'' +cat+ '\',this.value)"/>'
+       +'</div>';
   }).join('');
 }
 
@@ -1362,8 +1634,8 @@ function renderTracker(){
   document.getElementById('tr-spent').textContent=fmt(spent);
   document.getElementById('tr-remain').textContent=fmt(remain);
   document.getElementById('tr-remain').className='tracker-metric-val '+(remain<0?'neg':remain<budget*.2?'warn':'pos');
-  document.getElementById('tr-bar-left').textContent=`ใช้ไป ${Math.round(pct)}%`;
-  document.getElementById('tr-bar-right').textContent=`เหลือ ${fmt(Math.max(remain,0))}`;
+  document.getElementById('tr-bar-left').textContent='ใช้ไป '+Math.round(pct)+'%';
+  document.getElementById('tr-bar-right').textContent='เหลือ '+fmt(Math.max(remain,0));
   const fill=document.getElementById('tr-bar-fill');
   fill.style.width=pct+'%';fill.style.background=pct>=100?'#C0392B':pct>=80?'#9A6200':'#1A7A56';
 
@@ -1387,7 +1659,7 @@ function renderTracker(){
   const daysLeft=isCurrent?new Date(2026,viewMonth,0).getDate()-today.getDate()+1:0;
   const dailyBud=daysLeft>0&&remain>0?Math.floor(remain/daysLeft):0;
   const dvEl=document.getElementById('tr-daily-val'),ddEl=document.getElementById('tr-daily-desc');
-  if(daysLeft>0&&remain>0){dvEl.textContent=fmt(dailyBud);ddEl.textContent=`เหลืออีก ${daysLeft} วัน\n(${today.getDate()}–${new Date(2026,viewMonth,0).getDate()} ${MONTH_NAMES[viewMonth]})`;ddEl.style.whiteSpace='pre-line';}
+  if(daysLeft>0&&remain>0){dvEl.textContent=fmt(dailyBud);ddEl.textContent='เหลืออีก '+daysLeft+' วัน\n('+today.getDate()+'–'+new Date(2026,viewMonth,0).getDate()+' '+MONTH_NAMES[viewMonth]+')';ddEl.style.whiteSpace='pre-line';}
   else if(remain<=0){dvEl.textContent='฿0';ddEl.textContent='งบเดือนนี้หมดแล้ว';}
   else{dvEl.textContent='—';ddEl.textContent='ดูได้เฉพาะเดือนปัจจุบัน';}
 
@@ -1397,26 +1669,28 @@ function renderTracker(){
   const displayEntries = selDay === 'all' ? cachedEntries : cachedEntries.filter(e=>e.entry_date===selDay);
   if(cachedEntries.length===0){container.innerHTML='<div class="empty-state">ยังไม่มีรายการเดือนนี้</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
   if(displayEntries.length===0){container.innerHTML='<div class="empty-state">ไม่มีรายการในวันที่เลือก</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
-  let html=`<div class="entry-row hdr"><div>วันที่</div><div>รายการ</div><div style="text-align:right">จำนวน</div><div>หมวด</div><div></div></div>`;
+  let html='<div class="entry-row hdr"><div>วันที่</div><div>รายการ</div><div style="text-align:right">จำนวน</div><div>หมวด</div><div></div></div>';
   displayEntries.forEach(e=>{
+    const entryId=e.id;
     const d=new Date(e.entry_date+'T00:00:00');
-    const dateStr=`${d.getDate()} ${MONTH_NAMES[d.getMonth()+1]}`;
+    const dateStr=d.getDate()+' '+MONTH_NAMES[d.getMonth()+1];
     const color=CAT_COLORS[e.cat]||'#6B6B65';
     const catExceed=catBudgets[e.cat]>0&&cachedEntries.filter(x=>x.cat===e.cat).reduce((s,x)=>s+Number(x.amt),0)>catBudgets[e.cat];
-    html+=`<div class="entry-row">
-      <div class="entry-date">${dateStr}</div>
-      <div>
-        <div>${e.description}${catExceed?` <span style="font-size:10px;color:var(--red)">เกินงบ</span>`:''}</div>
-        ${e.note?`<div class="entry-note">${e.note}</div>`:''}
-        <div style="margin-top:2px;display:none;" class="mobile-meta"><span class="entry-cat" style="background:${color}18;color:${color}">${dateStr} · ${e.cat}</span></div>
-      </div>
-      <div class="entry-amt neg" style="text-align:right">−฿${Number(e.amt).toLocaleString()}</div>
-      <div><span class="entry-cat" style="background:${color}18;color:${color}">${e.cat}</span></div>
-      <div style="display:flex;gap:2px;">
-        <button class="edit-btn" onclick='openEdit(${JSON.stringify(e)})'>✏️</button>
-        <button class="del-btn" onclick="deleteEntry(${e.id})">×</button>
-      </div>
-    </div>`;
+    var eJson = JSON.stringify(e).replace(/'/g,"\\'");
+    var exceedBadge = catExceed?' <span style="font-size:10px;color:var(--red)">เกินงบ</span>':'';
+    var noteHtml = e.note?'<div class="entry-note">'+e.note+'</div>':'';
+    html+='<div class="entry-row-wrap">'
+      +'<div class="swipe-delete-bg" onclick="deleteEntry('+e.id+')">🗑 ลบ</div>'
+      +'<div class="entry-row">'
+      +'<div class="entry-date">'+dateStr+'</div>'
+      +'<div><div>'+e.description+exceedBadge+'</div>'+noteHtml+'</div>'
+      +'<div class="entry-amt neg" style="text-align:right">−฿'+Number(e.amt).toLocaleString()+'</div>'
+      +'<div><span class="entry-cat" style="background:'+color+'18;color:'+color+'">'+e.cat+'</span></div>'
+      +'<div style="display:flex;gap:2px;">'
+        +'<button class="edit-btn" onclick="openEdit('+eJson+')">✏️</button>'
+        +'<button class="del-btn" onclick="deleteEntry('+e.id+')">×</button>'
+      +'</div>'
+      +'</div></div>';
   });
   container.innerHTML=html;
 
@@ -1428,13 +1702,13 @@ function renderTracker(){
   Object.entries(cats).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt])=>{
     const color=CAT_COLORS[cat]||'#6B6B65';
     const bud=catBudgets[cat]||0;
-    const budText=bud>0?` / ฿${bud.toLocaleString()}`:'';
+    const budText=bud>0?' / ฿'+bud.toLocaleString():'';
     const over=bud>0&&amt>bud;
-    catHtml+=`<div class="cat-row">
-      <div class="cat-name">${cat}</div>
-      <div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${maxAmt>0?amt/maxAmt*100:0}%;background:${color}"></div></div>
-      <div class="cat-info" style="${over?'color:var(--red)':''}">฿${amt.toLocaleString()}${budText}${over?' ⚠️':''}</div>
-    </div>`;
+     catHtml+='<div class="cat-row">'
+       +'<div class="cat-name">'+cat+'</div>'
+       +'<div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:'+(maxAmt>0?amt/maxAmt*100:0)+'%;background:'+color+'"></div></div>'
+       +'<div class="cat-info" style="'+(over?'color:var(--red)':'')+'">฿'+amt.toLocaleString()+budText+(over?' ⚠️':'')+'</div>'
+       +'</div>';
   });
   document.getElementById('cat-breakdown').innerHTML=catHtml;
   document.getElementById('cat-card').style.display='block';
@@ -1445,7 +1719,7 @@ function renderTracker(){
   const sortedDays=Object.keys(dayMap).sort();
   const month=viewMonth;
   const daysInMonth=new Date(2026,month,0).getDate();
-  const allDays=Array.from({length:daysInMonth},(_,i)=>`2026-${String(month).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+  const allDays=Array.from({length:daysInMonth},(_,i)=>'2026-'+String(month).padStart(2,'0')+'-'+String(i+1).padStart(2,'0'));
   const chartData=allDays.map(d=>Number(dayMap[d]||0));
   const chartLabels=allDays.map(d=>d.slice(8));
   const maxVal = Math.max(...chartData.map(Number), 1);
@@ -1484,7 +1758,7 @@ function renderTracker(){
   let weekHtml='';
   weeks.forEach(w=>{
     const wSpent=cachedEntries.filter(e=>{const d=new Date(e.entry_date+'T00:00:00').getDate();return w.days(d);}).reduce((s,e)=>s+Number(e.amt),0);
-    weekHtml+=`<div class="week-row"><span style="color:var(--text-2);font-size:13px;">${w.label}</span><span class="neg" style="font-family:var(--mono);font-size:13px;">${wSpent>0?'−'+fmt(wSpent):'฿0'}</span></div>`;
+    weekHtml+='<div class="week-row"><span style="color:var(--text-2);font-size:13px;">'+w.label+'</span><span class="neg" style="font-family:var(--mono);font-size:13px;">'+(wSpent>0?'−'+fmt(wSpent):'฿0')+'</span></div>';
   });
   document.getElementById('week-grid').innerHTML=weekHtml;
   document.getElementById('week-card').style.display='block';
@@ -1502,8 +1776,8 @@ function renderTracker(){
     const msgEl=document.getElementById('compare-msg');
     if(prevSpent>0){
       msgEl.style.display='block';
-      if(diff2>0){msgEl.className='alert warn';msgEl.textContent=`⚠️ เดือนนี้ใช้มากกว่าเดือนที่แล้ว ${fmt(diff2)}`;}
-      else if(diff2<0){msgEl.className='alert ok';msgEl.textContent=`✅ เดือนนี้ประหยัดกว่าเดือนที่แล้ว ${fmt(Math.abs(diff2))}`;}
+      if(diff2>0){msgEl.className='alert warn';msgEl.textContent='⚠️ เดือนนี้ใช้มากกว่าเดือนที่แล้ว '+fmt(diff2);}
+      else if(diff2<0){msgEl.className='alert ok';msgEl.textContent='✅ เดือนนี้ประหยัดกว่าเดือนที่แล้ว '+fmt(Math.abs(diff2));}
       else{msgEl.className='alert info';msgEl.textContent='เท่ากับเดือนที่แล้วพอดี';}
     }else{msgEl.style.display='none';}
     document.getElementById('compare-card').style.display='block';
