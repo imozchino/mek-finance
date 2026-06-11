@@ -458,7 +458,7 @@ async function fetchPrices(){
   btn.innerHTML = '<span>⏳</span> กำลังดึงข้อมูล...';
   status.textContent = 'กำลังเชื่อมต่อ...';
 
-  const PROXY = 'https://api.allorigins.win/get?url=';
+  const PROXY = 'https://corsproxy.io/?';
   function proxyUrl(url){ return PROXY + encodeURIComponent(url); }
 
   try {
@@ -471,8 +471,7 @@ async function fetchPrices(){
     const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/spark?symbols='+allSymbols+'&range=1d&interval=1d';
     const res = await fetch(proxyUrl(yahooUrl));
     if(!res.ok) throw new Error('proxy failed');
-    const outer = await res.json();
-    const data = JSON.parse(outer.contents);
+    const data = await res.json();
     const spark = data?.spark?.result || [];
 
     spark.forEach(function(item){
