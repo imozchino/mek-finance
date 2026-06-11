@@ -1532,6 +1532,10 @@ function openEdit(e){
   document.getElementById('edit-note').value=e.note||'';
   document.getElementById('edit-modal').style.display='flex';
 }
+function openEditById(id){
+  var e = cachedEntries.find(function(x){return x.id==id;});
+  if(e) openEdit(e);
+}
 function closeModal(){document.getElementById('edit-modal').style.display='none';}
 async function saveEdit(){
   const id=document.getElementById('edit-id').value;
@@ -1647,7 +1651,7 @@ function renderTracker(){
         +noteHtml
       +'</div>'
       +'<div style="font-family:var(--mono);font-size:13px;color:var(--red);white-space:nowrap;">−฿'+Number(e.amt).toLocaleString()+'</div>'
-      +'<button class="edit-btn" onclick="openEdit('+eJson+')" style="padding:2px 4px;font-size:14px;">✏️</button>'
+      +'<button class="edit-btn" onclick="openEditById('+e.id+')" style="padding:2px 4px;font-size:14px;">✏️</button>'
       +'<button class="del-btn" onclick="deleteEntry('+e.id+')">✕</button>'
       +'</div>';
   });
