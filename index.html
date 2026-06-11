@@ -909,11 +909,18 @@ function initProfilePic(){
   <button class="refresh-btn" id="refresh-btn" onclick="doRefresh()" title="รีเฟรช">
     <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
   </button>
-  <div class="header">
-    <div class="header-label">Personal Finance · 2026</div>
-    <div class="header-title">Mek's Finance Planner</div>
+   <div class="header">
+     <div class="header-label">Personal Finance · 2026</div>
+     <div class="header-row">
+       <div class="profile-pic" id="profile-pic" onclick="triggerProfileUpload()">
+         <div class="profile-pic-placeholder" id="profile-placeholder">👤</div>
+         <img id="profile-img" src="" style="display:none;border-radius:50%;width:100%;height:100%;object-fit:cover;"/>
+       </div>
+       <div class="header-title">Mek's Finance Planner</div>
+     </div>
+   </div>
+   <input type="file" id="profile-upload" accept="image/*" style="display:none;" onchange="uploadProfilePic(this)"/>
 
-  </div>
 
   <div class="tabs">
     <button class="tab-btn" onclick="switchTab('planner',this)">📊 Planner</button>
@@ -1154,14 +1161,7 @@ function initProfilePic(){
           <span style="font-size:12px;color:var(--text-3);margin-left:4px;" id="theme-name">Blue</span>
         </div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
-        <div><div style="font-size:13px;font-weight:500;">Face ID / Fingerprint Lock</div><div style="font-size:12px;color:var(--text-3);">ล็อก Planner ด้วย Biometric</div></div>
-        <label style="position:relative;width:44px;height:24px;cursor:pointer;">
-          <input type="checkbox" id="biometric-toggle" onchange="toggleBiometric()" style="opacity:0;width:0;height:0;"/>
-          <span id="biometric-knob" style="position:absolute;inset:0;background:var(--border);border-radius:12px;transition:.2s;"></span>
-          <span id="biometric-thumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
-        </label>
-      </div>
+
     </div>
 
     <div class="card">
@@ -1410,22 +1410,8 @@ function checkLock(){
     setTimeout(()=>inp.classList.remove('error'), 400);
   }
 }
-async function showLockPopupWithBiometric(){
-  if(biometricEnabled && window.PublicKeyCredential){
-    try {
-      const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-      if(available){
-        document.getElementById('planner-content').style.display='block';
-        document.getElementById('planner-lock-popup').style.display='none';
-        return;
-      }
-    } catch(e){}
-  }
-  showLockPopup();
-}
-
 function initPlannerLock(){
-  showLockPopupWithBiometric();
+  showLockPopup();
 }
 
 const SUPABASE_URL='https://ahelypphgebpszhvmfrc.supabase.co';
