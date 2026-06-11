@@ -916,7 +916,7 @@ function initProfilePic(){
         </div>
         <div>
           <div class="slider-row"><div><div class="slider-label">เป้าเงินเหลือปลาย ธ.ค.</div><div class="slider-desc">ยอดขั้นต่ำที่อยากมีในบัญชี</div></div><div class="slider-val" id="target-display">฿100,000</div></div>
-          <input type="range" id="target-slider" min="50000" max="300000" step="10000" value="100000" oninput="update()"/>
+          <input type="range" id="target-slider" min="50000" max="300000" step="10000" value="100000" oninput="updateFromTarget()"/>
         </div>
         <div>
           <div class="slider-row"><div><div class="slider-label">DCA VOO ต่อเดือน</div><div class="slider-desc">ลงทุนอัตโนมัติทุกวันที่ 1</div></div><div class="slider-val" id="dca-display">฿5,000</div></div>
@@ -1412,6 +1412,33 @@ const ALL_CATS=Object.keys(CAT_COLORS);
 let cachedEntries=[],allEntries=[],catBudgets={};
 
 function fmt(n){const abs=Math.abs(Math.round(n));return(n<0?'−':'')+'฿'+abs.toLocaleString('th-TH');}
+
+function updateFromTarget(){
+  // Reverse-calculate: given target, what living budget is needed?
+  const target = +document.getElementById('target-slider').value;
+  const dca    = +document.getElementById('dca-slider').value;
+  const fixed  = TENNIS + AIRPOD + dca;
+
+  // totalVal = START + net*MONTHS - totalBills
+  // net = SALARY - fixed - living
+  // living = SALARY - fixed - net
+  // net = (START + net*MONTHS - totalBills - target) / MONTHS  ... solve:
+  // yearEnd = START + (SALARY-fixed-living)*MONTHS - totalBills = target
+  // (SALARY-fixed-living)*MONTHS = target - START + totalBills
+  // SALARY-fixed-living = (target - START + totalBills) / MONTHS
+  // living = SALARY - fixed - (target - START + totalBills) / MONTHS
+
+  const totalBills = BIG_BILLS.reduce((s,m)=>s+m.bill, 0);
+  const requiredNet = (target - START + totalBills) / MONTHS;
+  const requiredLiving = SALARY - fixed - requiredNet;
+
+  // Clamp to slider range
+  const clamped = Math.max(5000, Math.min(30000, Math.round(requiredLiving / 500) * 500));
+
+  // Update living slider
+  document.getElementById('living-slider').value = clamped;
+  update();
+}
 
 function update(){
   const living=+document.getElementById('living-slider').value;
