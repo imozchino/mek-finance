@@ -278,7 +278,7 @@ body.dark{--bg:#0F1923;--surface:#1A2535;--border:#2A3A50;--border-light:#1F2E42
 
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').then(reg=>{
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
     reg.update(); // force check for updates every load
   });
   // When new SW is ready, reload page automatically
