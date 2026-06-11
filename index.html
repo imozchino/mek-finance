@@ -463,16 +463,36 @@ async function fetchPrices(){
 
   try {
     // Fetch all holdings - TH uses .BK suffix, US uses ticker directly
-    const fetchOne = async function(h){
+    // US via Finnhub
+    const fetchUS = async function(h){
       try {
-        const symbol = h.market==='TH' ? h.ticker+'.BK' : h.ticker;
-        const r = await fetch(BASE+'/quote?symbol='+symbol+'&token='+FINNHUB_KEY);
+        const r = await fetch(BASE+'/quote?symbol='+h.ticker+'&token='+FINNHUB_KEY);
         if(!r.ok) return;
         const d = await r.json();
         if(d && d.c && d.c > 0) livePrice[h.ticker] = d.c;
       } catch(e){}
     };
-    await Promise.all(holdings.map(h=>fetchOne(h)));
+
+    // TH via Yahoo Finance directly from browser (uses browser session/cookies)
+    const fetchTH = async function(h){
+      try {
+        const url = 'https://query1.finance.yahoo.com/v8/finance/chart/'+h.ticker+'.BK?interval=1d&range=1d';
+        const r = await fetch(url, {credentials:'include', mode:'cors'});
+        if(!r.ok) return;
+        const d = await r.json();
+        const price = d?.chart?.result?.[0]?.meta?.regularMarketPrice;
+        if(price && price > 0) livePrice[h.ticker] = price;
+      } catch(e){
+        // fallback: try no-cors mode just to trigger, won't get data
+      }
+    };
+
+    const usHoldings = holdings.filter(h=>h.market==='US');
+    const thHoldings = holdings.filter(h=>h.market==='TH');
+    await Promise.all([
+      ...usHoldings.map(h=>fetchUS(h)),
+      ...thHoldings.map(h=>fetchTH(h))
+    ]);
 
     // USD/THB
     try {
