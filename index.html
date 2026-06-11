@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Finance"/>
 <meta name="theme-color" content="#1B5FA8"/>
@@ -173,7 +173,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 .settings-section-title{font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
 .divider{height:1px;background:var(--border-light);margin:.8rem 0;}
 /* Dark mode */
-body.dark{--bg:#0F1923;--surface:#1A2535;--border:#2A3A50;--border-light:#1F2E42;--text:#E8F0F8;--text-2:#8BAAC4;--text-3:#4A6A84;--blue-bg:#1B3357;}
+
 /* Notification banner */
 .notif-banner{background:var(--amber-bg);border:1px solid #E0B060;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--amber);margin-bottom:14px;display:none;}
 /* Responsive */
@@ -277,24 +277,29 @@ body.dark{--bg:#0F1923;--surface:#1A2535;--border:#2A3A50;--border-light:#1F2E42
   }
 
 
-  /* Color themes - override accent color everywhere */
-  body.theme-green{
-    --blue:#1A7A56;--blue-bg:#EBF5F0;--bg:#EEF7F3;--border:#B8D8CC;--border-light:#D5EDE4;
+  /* Light themes - only change accent color + subtle bg tint */
+  /* Light themes */
+  body.theme-green{ --blue:#1A7A56;--blue-bg:#EBF5F0;--bg:#EEF7F3;--surface:#FFFFFF;--border:#B8D8CC;--border-light:#D5EDE4; }
+  body.theme-purple{ --blue:#6B3FA8;--blue-bg:#F0EAFB;--bg:#F0EAF9;--surface:#FFFFFF;--border:#C8B0E8;--border-light:#DDD0F2; }
+  body.theme-red{ --blue:#C0392B;--blue-bg:#FCECEA;--bg:#FAEAEA;--surface:#FFFFFF;--border:#E8B4B4;--border-light:#F5D0D0; }
+  body.theme-orange{ --blue:#D46A1A;--blue-bg:#FEF0E4;--bg:#FEF3E8;--surface:#FFFFFF;--border:#E8C49A;--border-light:#F5DEC4; }
+  body.theme-black{ --blue:#1A1A1A;--blue-bg:#F0F0F0;--bg:#F2F2F2;--surface:#FFFFFF;--border:#C0C0C0;--border-light:#DCDCDC; }
+  /* Dark mode base */
+  body.dark{
+    --bg:#111827;--surface:#1F2937;--border:#374151;--border-light:#2D3748;
+    --text:#F9FAFB;--text-2:#D1D5DB;--text-3:#9CA3AF;
+    --blue:#60A5FA;--blue-bg:#1E3A5F;
+    --green:#34D399;--green-bg:#064E3B;
+    --red:#F87171;--red-bg:#450A0A;
+    --amber:#FBBF24;--amber-bg:#451A03;
   }
-  body.theme-purple{
-    --blue:#6B3FA8;--blue-bg:#F0EAFB;--bg:#F0EAF9;--border:#C8B0E8;--border-light:#DDD0F2;
-  }
-  body.theme-red{
-    --blue:#C0392B;--blue-bg:#FCECEA;--bg:#FCECEA;--border:#EAB8B4;--border-light:#F5D5D3;
-  }
-  body.theme-black{
-    --blue:#1A1A1A;--blue-bg:#F0F0F0;--bg:#F0F0F0;--border:#C8C8C8;--border-light:#E0E0E0;
-    --text:#0A0A0A;--text-2:#3A3A3A;--text-3:#808080;
-  }
-  body.theme-orange{
-    --blue:#D46A1A;--blue-bg:#FEF0E4;--bg:#FEF0E4;--border:#E8C49A;--border-light:#F5DEC4;
-  }
-  .theme-btn{width:26px;height:26px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:border-color .15s;outline:none;}
+  /* Dark + theme accent colors - higher specificity */
+  body.dark.theme-green{ --blue:#34D399;--blue-bg:#064E3B; }
+  body.dark.theme-purple{ --blue:#A78BFA;--blue-bg:#2E1065; }
+  body.dark.theme-red{ --blue:#F87171;--blue-bg:#450A0A; }
+  body.dark.theme-orange{ --blue:#FB923C;--blue-bg:#431407; }
+  body.dark.theme-black{ --blue:#D1D5DB;--blue-bg:#1F2937; }
+  .theme-btn{width:28px;height:28px;border-radius:50%;border:3px solid transparent;cursor:pointer;outline:none;padding:0;flex-shrink:0;}
   .theme-btn.active{border-color:var(--text);}
   .theme-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 
@@ -309,7 +314,7 @@ body.dark{--bg:#0F1923;--surface:#1A2535;--border:#2A3A50;--border-light:#1F2E42
 
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').then(reg=>{
+  navigator.serviceWorker.register('./sw.js?v=20260611').then(reg=>{
     reg.update(); // force check for updates every load
   });
   // When new SW is ready, reload page automatically
@@ -795,6 +800,15 @@ async function checkBiometric(){
 
 // ── COLOR THEME ──
 const THEME_NAMES = {blue:'Blue',green:'Green',purple:'Purple',red:'Red',orange:'Orange',black:'Black'};
+const DARK_ACCENT = {
+  blue:'#60A5FA', green:'#34D399', purple:'#A78BFA',
+  red:'#F87171', orange:'#FB923C', black:'#D1D5DB'
+};
+const DARK_ACCENT_BG = {
+  blue:'#1E3A5F', green:'#064E3B', purple:'#2E1065',
+  red:'#450A0A', orange:'#431407', black:'#1F2937'
+};
+
 function setTheme(name, btn){
   ['blue','green','purple','red','orange','black'].forEach(t=>{
     document.body.classList.remove('theme-'+t);
@@ -805,9 +819,14 @@ function setTheme(name, btn){
   if(btn) btn.classList.add('active');
   const nameEl = document.getElementById('theme-name');
   if(nameEl) nameEl.textContent = THEME_NAMES[name]||name;
-  // Update header title color to match theme
-  const titleEl = document.querySelector('.header-title');
-  if(titleEl) titleEl.style.color = 'var(--blue)';
+  // If dark mode is on, manually set accent color on body
+  if(document.body.classList.contains('dark')){
+    document.body.style.setProperty('--blue', DARK_ACCENT[name]||'#60A5FA');
+    document.body.style.setProperty('--blue-bg', DARK_ACCENT_BG[name]||'#1E3A5F');
+  } else {
+    document.body.style.removeProperty('--blue');
+    document.body.style.removeProperty('--blue-bg');
+  }
   localStorage.setItem('mek_theme', name);
 }
 
@@ -1591,6 +1610,9 @@ function toggleDark(){
   document.getElementById('dark-knob').style.background=on?'var(--blue)':'var(--border)';
   document.getElementById('dark-thumb').style.left=on?'23px':'3px';
   localStorage.setItem('darkMode',on?'1':'0');
+  // Re-apply theme accent for dark/light
+  const theme = localStorage.getItem('mek_theme')||'blue';
+  setTheme(theme, document.getElementById('theme-'+theme));
 }
 
 // CAT BUDGET SETTINGS
