@@ -473,18 +473,18 @@ async function fetchPrices(){
       } catch(e){}
     };
 
-    // TH via Yahoo Finance directly from browser (uses browser session/cookies)
+    // TH via Alpha Vantage
+    const AV_KEY = '8L2AP0RWNQMVZSA9';
     const fetchTH = async function(h){
       try {
-        const url = 'https://query1.finance.yahoo.com/v8/finance/chart/'+h.ticker+'.BK?interval=1d&range=1d';
-        const r = await fetch(url, {credentials:'include', mode:'cors'});
+        const symbol = h.ticker+'.BK';
+        const url = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol='+symbol+'&apikey='+AV_KEY;
+        const r = await fetch(url);
         if(!r.ok) return;
         const d = await r.json();
-        const price = d?.chart?.result?.[0]?.meta?.regularMarketPrice;
+        const price = parseFloat(d?.['Global Quote']?.['05. price']);
         if(price && price > 0) livePrice[h.ticker] = price;
-      } catch(e){
-        // fallback: try no-cors mode just to trigger, won't get data
-      }
+      } catch(e){}
     };
 
     const usHoldings = holdings.filter(h=>h.market==='US');
