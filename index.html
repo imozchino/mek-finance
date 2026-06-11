@@ -1641,13 +1641,15 @@ function renderTracker(){
     var exceedBadge = catExceed?' <span style="font-size:10px;color:var(--red)">เกิน</span>':'';
     var noteHtml = e.note?'<div class="entry-note">'+e.note+'</div>':'';
     html+='<div class="entry-row">'
-      +'<div class="entry-date">'+dateStr+'</div>'
-      +'<div><div style="font-size:13px;">'+e.description+exceedBadge+'</div>'
-        +'<div style="margin-top:2px;"><span class="entry-cat" style="background:'+color+'18;color:'+color+';font-size:10px;padding:1px 6px;border-radius:6px;">'+e.cat+'</span></div>'
-        +noteHtml+'</div>'
-      +'<div class="entry-amt neg" style="text-align:right;font-family:var(--mono);font-size:13px;">−฿'+Number(e.amt).toLocaleString()+'</div>'
-      +'<div style="display:flex;gap:4px;align-items:center;">'
-        +'<button class="edit-btn" onclick="openEdit('+eJson+')" style="font-size:14px;padding:3px 5px;">✏️</button>'
+      +'<div style="color:var(--text-3);font-family:var(--mono);font-size:11px);width:44px;flex-shrink:0;">'+dateStr+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+e.description+exceedBadge+'</div>'
+        +'<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:'+color+'18;color:'+color+';">'+e.cat+'</span>'
+        +noteHtml
+      +'</div>'
+      +'<div style="font-family:var(--mono);font-size:13px;color:var(--red);white-space:nowrap;flex-shrink:0;">−฿'+Number(e.amt).toLocaleString()+'</div>'
+      +'<div style="display:flex;gap:2px;flex-shrink:0;">'
+        +'<button class="edit-btn" onclick="openEdit('+eJson+')">✏️</button>'
         +'<button class="del-btn" onclick="deleteEntry('+e.id+')">🗑</button>'
       +'</div>'
       +'</div>';
