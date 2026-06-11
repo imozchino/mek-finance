@@ -736,42 +736,6 @@ function renderPortfolio(){
 
 // updateWidget removed
 
-// ── SWIPE TO DELETE ──
-function initSwipe(){
-  const container = document.getElementById('entry-list-container');
-  if(!container) return;
-  let startX=0, startY=0, currentEl=null, swiped=null;
-
-  container.addEventListener('touchstart', function(e){
-    const row = e.target.closest('.entry-row-wrap');
-    if(!row) return;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    currentEl = row;
-  }, {passive:true});
-
-  container.addEventListener('touchmove', function(e){
-    if(!currentEl) return;
-    const dx = e.touches[0].clientX - startX;
-    const dy = e.touches[0].clientY - startY;
-    if(Math.abs(dy) > Math.abs(dx)) return; // vertical scroll
-    if(dx < -30){
-      if(swiped && swiped !== currentEl) swiped.classList.remove('swiped');
-      currentEl.classList.add('swiped');
-      swiped = currentEl;
-    } else if(dx > 10){
-      currentEl.classList.remove('swiped');
-    }
-  }, {passive:true});
-
-  document.addEventListener('touchstart', function(e){
-    if(swiped && !swiped.contains(e.target)){
-      swiped.classList.remove('swiped');
-      swiped = null;
-    }
-  }, {passive:true});
-}
-
 // ── HAPTIC FEEDBACK ──
 function haptic(type){
   try {
@@ -1484,7 +1448,7 @@ function update(){
   window._budget=living;
   localStorage.setItem('mek_budget', living);
   renderCatBudgetSettings();
-  setTimeout(initSwipe, 100);
+
 }
 
 // SYNC STATUS
@@ -1663,20 +1627,19 @@ function renderTracker(){
     const color=CAT_COLORS[e.cat]||'#6B6B65';
     const catExceed=catBudgets[e.cat]>0&&cachedEntries.filter(x=>x.cat===e.cat).reduce((s,x)=>s+Number(x.amt),0)>catBudgets[e.cat];
     var eJson = JSON.stringify(e).replace(/'/g,"\\'");
-    var exceedBadge = catExceed?' <span style="font-size:10px;color:var(--red)">เกินงบ</span>':'';
+    var exceedBadge = catExceed?' <span style="font-size:10px;color:var(--red)">เกิน</span>':'';
     var noteHtml = e.note?'<div class="entry-note">'+e.note+'</div>':'';
-    html+='<div class="entry-row-wrap">'
-      +'<div class="swipe-delete-bg" onclick="deleteEntry('+e.id+')">🗑 ลบ</div>'
-      +'<div class="entry-row">'
+    html+='<div class="entry-row">'
       +'<div class="entry-date">'+dateStr+'</div>'
-      +'<div><div>'+e.description+exceedBadge+'</div>'+noteHtml+'</div>'
-      +'<div class="entry-amt neg" style="text-align:right">−฿'+Number(e.amt).toLocaleString()+'</div>'
-      +'<div><span class="entry-cat" style="background:'+color+'18;color:'+color+'">'+e.cat+'</span></div>'
-      +'<div style="display:flex;gap:2px;">'
-        +'<button class="edit-btn" onclick="openEdit('+eJson+')">✏️</button>'
-        +'<button class="del-btn" onclick="deleteEntry('+e.id+')">×</button>'
+      +'<div><div style="font-size:13px;">'+e.description+exceedBadge+'</div>'
+        +'<div style="margin-top:2px;"><span class="entry-cat" style="background:'+color+'18;color:'+color+';font-size:10px;padding:1px 6px;border-radius:6px;">'+e.cat+'</span></div>'
+        +noteHtml+'</div>'
+      +'<div class="entry-amt neg" style="text-align:right;font-family:var(--mono);font-size:13px;">−฿'+Number(e.amt).toLocaleString()+'</div>'
+      +'<div style="display:flex;gap:4px;align-items:center;">'
+        +'<button class="edit-btn" onclick="openEdit('+eJson+')" style="font-size:14px;padding:3px 5px;">✏️</button>'
+        +'<button class="del-btn" onclick="deleteEntry('+e.id+')" style="font-size:16px;padding:2px 5px;">×</button>'
       +'</div>'
-      +'</div></div>';
+      +'</div>';
   });
   container.innerHTML=html;
 
