@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Finance"/>
+<meta name="theme-color" content="#1B5FA8"/>
+<title>Finance Planner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#EEF3FB;--surface:#FFFFFF;--border:#C8D8EF;--border-light:#DDE8F5;
+  --text:#0D1B2A;--text-2:#3A5068;--text-3:#7A96B0;
+  --green:#1A7A56;--green-bg:#EBF5F0;
+  --red:#C0392B;--red-bg:#FCECEA;
+  --amber:#9A6200;--amber-bg:#FEF5E4;
+  --blue:#1B5FA8;--blue-bg:#DDEAF9;
+  --mono:'IBM Plex Mono',monospace;--sans:'Inter',sans-serif;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
+.page{max-width:760px;margin:0 auto;padding:40px 20px 80px;}
+.header{margin-bottom:28px;}
+.header-label{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;}
+.header-title{font-size:26px;font-weight:600;letter-spacing:-.02em;color:var(--blue);}
+.header-sub{font-size:13px;color:var(--text-2);margin-top:4px;}
+/* Tabs */
+.tabs{display:flex;gap:2px;background:var(--border-light);border-radius:10px;padding:3px;margin-bottom:20px;}
+.tab-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 10px;border:none;border-radius:8px;background:none;color:var(--text-3);cursor:pointer;transition:all .15s;}
+.tab-btn.active{background:var(--blue);color:#fff;box-shadow:0 1px 4px rgba(27,95,168,.25);}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px;}
+.card-title{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:14px;}
+/* Sliders */
+.sliders-grid{display:grid;gap:18px;}
+.slider-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
+.slider-label{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.slider-desc{font-size:12px;color:var(--text-3);}
+.slider-val{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);text-align:right;min-width:88px;}
+input[type=range]{width:100%;height:2px;appearance:none;background:var(--border);border-radius:2px;outline:none;cursor:pointer;margin-top:8px;grid-column:1/-1;}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--border);}
+/* Result hero */
+.result-hero{text-align:center;padding:6px 0 18px;}
+.result-label{font-size:11px;color:var(--text-3);margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase;}
+.result-amount{font-family:var(--mono);font-size:44px;font-weight:500;letter-spacing:-.03em;transition:color .3s;}
+.result-daily{font-size:13px;color:var(--text-2);margin-top:4px;}
+.result-amount.good{color:var(--green);}.result-amount.ok{color:var(--amber);}.result-amount.tight{color:var(--red);}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;margin-top:10px;}
+.pill.good{background:var(--green-bg);color:var(--green);}.pill.ok{background:var(--amber-bg);color:var(--amber);}.pill.tight{background:var(--red-bg);color:var(--red);}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+/* Table */
+.table{width:100%;border-collapse:collapse;}
+.table th{font-size:11px;font-weight:500;color:var(--text-3);text-align:left;padding:0 0 8px;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.table th:last-child{text-align:right;}
+.table td{padding:9px 0;border-bottom:1px solid var(--border-light);font-size:13px;vertical-align:top;}
+.table td:last-child{text-align:right;font-family:var(--mono);font-size:13px;}
+.table tr:last-child td{border-bottom:none;}
+.table .total td{font-weight:600;padding-top:12px;border-top:1px solid var(--border);border-bottom:none;}
+.table .sub-label{font-size:11px;color:var(--text-3);margin-top:2px;}
+.neg{color:var(--red);}.pos{color:var(--green);}.warn{color:var(--amber);}.muted{color:var(--text-3);}
+/* Timeline */
+.tl-row{display:grid;grid-template-columns:80px 1fr 1fr 110px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;}
+.tl-row:last-child{border-bottom:none;}
+.tl-row.hdr{font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.05em;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.tl-month{font-weight:500;}.tl-bill{font-size:12px;color:var(--text-3);}
+.tl-net{font-family:var(--mono);font-size:12px;}
+.tl-balance{font-family:var(--mono);font-size:13px;font-weight:500;text-align:right;}
+.tl-row.low .tl-balance{color:var(--amber);}.tl-row.crit .tl-balance{color:var(--red);}.tl-row.safe .tl-balance{color:var(--green);}
+/* Progress */
+.progress-wrap{margin-top:14px;}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);margin-bottom:5px;}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;transition:width .4s,background .3s;}
+/* Alert */
+.alert{border-radius:8px;padding:10px 14px;font-size:13px;line-height:1.6;margin-top:10px;}
+.alert.warn{background:var(--amber-bg);color:var(--amber);}.alert.ok{background:var(--green-bg);color:var(--green);}
+.alert.info{background:var(--blue-bg);color:var(--blue);}.alert.bad{background:var(--red-bg);color:var(--red);}
+/* Fixed grid */
+.fixed-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
+.fixed-item{background:var(--blue-bg);border-radius:8px;padding:12px 14px;border:1px solid var(--border);}
+.fixed-item-label{font-size:11px;color:var(--text-3);margin-bottom:4px;}
+.fixed-item-val{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);}
+/* Tracker summary */
+.tracker-top{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.tracker-metric{background:var(--surface);border-radius:10px;padding:14px 16px;border:1px solid var(--border);}
+.tracker-metric-label{font-size:11px;color:var(--text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.tracker-metric-val{font-family:var(--mono);font-size:20px;font-weight:500;}
+/* Daily box */
+.tracker-daily-box{display:flex;justify-content:space-between;align-items:center;background:var(--blue);border-radius:12px;padding:14px 18px;margin-bottom:10px;}
+.tracker-daily-label{font-size:11px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.tracker-daily-val{font-family:var(--mono);font-size:26px;font-weight:500;color:#fff;}
+.tracker-daily-right{font-size:12px;color:rgba(255,255,255,.8);text-align:right;line-height:1.6;}
+/* Today/Yesterday */
+.tracker-day-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.tracker-day-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.tracker-day-label{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.tracker-day-val{font-family:var(--mono);font-size:20px;font-weight:500;}
+/* Budget bar */
+.budget-bar-wrap{margin-bottom:16px;}
+.budget-bar-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--text-3);margin-bottom:5px;}
+.budget-bar-bg{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.budget-bar-fill{height:100%;border-radius:4px;transition:width .4s,background .3s;}
+/* Form */
+.entry-form{display:grid;grid-template-columns:1fr 100px 110px 100px auto;gap:8px;align-items:center;margin-bottom:4px;}
+.entry-form input,.entry-form select,.entry-form textarea{font-family:var(--sans);font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
+.entry-form input:focus,.entry-form select:focus{border-color:var(--blue);}
+.add-btn{font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 14px;border:none;border-radius:8px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;}
+.add-btn:hover{opacity:.88;}.add-btn:disabled{opacity:.4;cursor:not-allowed;}
+/* Month/filter row */
+.filter-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.filter-row label{font-size:12px;color:var(--text-3);}
+.filter-row select{font-family:var(--sans);font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
+.sync-status{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:5px;}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+/* Entry list */
+.entry-row{display:grid;grid-template-columns:60px 1fr 80px auto 28px;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border-light);font-size:13px;}
+.entry-row:last-child{border-bottom:none;}
+.entry-row.hdr{font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.04em;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.entry-date{color:var(--text-3);font-family:var(--mono);font-size:12px;}
+.entry-amt{font-family:var(--mono);font-weight:500;}
+.entry-cat{font-size:11px;padding:2px 7px;border-radius:8px;display:inline-block;}
+.entry-note{font-size:11px;color:var(--text-3);margin-top:2px;}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:15px;line-height:1;padding:2px 4px;border-radius:4px;}
+.del-btn:hover{color:var(--red);background:var(--red-bg);}
+.edit-btn{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:13px;padding:2px 4px;border-radius:4px;}
+.edit-btn:hover{color:var(--blue);background:var(--blue-bg);}
+.empty-state{text-align:center;padding:28px 0;color:var(--text-3);font-size:13px;}
+/* Cat breakdown */
+.cat-breakdown{display:grid;gap:10px;margin-top:4px;}
+.cat-row{display:flex;align-items:center;gap:10px;font-size:13px;}
+.cat-name{width:76px;color:var(--text-2);font-size:12px;}
+.cat-bar-wrap{flex:1;background:var(--border);border-radius:3px;height:5px;overflow:hidden;}
+.cat-bar-fill{height:100%;border-radius:3px;}
+.cat-info{font-size:12px;min-width:80px;text-align:right;color:var(--text-2);}
+/* Category budget settings */
+.cat-budget-grid{display:grid;gap:8px;}
+.cat-budget-row{display:flex;align-items:center;gap:10px;font-size:13px;}
+.cat-budget-name{flex:1;color:var(--text-2);}
+.cat-budget-input{width:100px;font-family:var(--sans);font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;text-align:right;}
+.cat-budget-input:focus{border-color:var(--blue);}
+.cat-budget-bar-wrap{width:80px;background:var(--border);border-radius:3px;height:5px;overflow:hidden;}
+.cat-budget-bar{height:100%;border-radius:3px;}
+/* Chart */
+.chart-wrap{position:relative;height:140px;margin-top:4px;}
+/* Compare */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.compare-item{background:var(--bg);border-radius:8px;padding:10px 12px;}
+.compare-label{font-size:11px;color:var(--text-3);margin-bottom:4px;}
+.compare-val{font-family:var(--mono);font-size:16px;font-weight:500;}
+/* Week summary */
+.week-grid{display:grid;gap:6px;}
+.week-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg);border-radius:8px;font-size:13px;}
+/* Export btn */
+.export-btn{font-family:var(--sans);font-size:12px;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text-2);cursor:pointer;}
+.export-btn:hover{background:var(--bg);}
+/* Edit modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.modal{background:var(--surface);border-radius:14px;padding:24px;width:100%;max-width:420px;}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:16px;}
+.modal-field{margin-bottom:12px;}
+.modal-field label{font-size:12px;color:var(--text-3);display:block;margin-bottom:4px;}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;font-family:var(--sans);font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
+.modal-field input:focus,.modal-field select:focus{border-color:var(--blue);}
+.modal-actions{display:flex;gap:8px;margin-top:16px;}
+.modal-save{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:9px;border:none;border-radius:8px;background:var(--blue);color:#fff;cursor:pointer;}
+.modal-cancel{font-family:var(--sans);font-size:13px;padding:9px 16px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--text-2);cursor:pointer;}
+/* Settings tab */
+.settings-section{margin-bottom:20px;}
+.settings-section-title{font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.divider{height:1px;background:var(--border-light);margin:.8rem 0;}
+/* Dark mode */
+body.dark{--bg:#0F1923;--surface:#1A2535;--border:#2A3A50;--border-light:#1F2E42;--text:#E8F0F8;--text-2:#8BAAC4;--text-3:#4A6A84;--blue-bg:#1B3357;}
+/* Notification banner */
+.notif-banner{background:var(--amber-bg);border:1px solid #E0B060;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--amber);margin-bottom:14px;display:none;}
+/* Responsive */
+@media(max-width:600px){
+  .page{padding:20px 14px 70px;}
+  .header-title{font-size:22px;}
+  .result-amount{font-size:32px;}
+  .tl-row{grid-template-columns:56px 1fr 80px;}.tl-net{display:none;}
+  .fixed-grid{grid-template-columns:1fr 1fr;}
+  .tracker-top{grid-template-columns:1fr 1fr;}
+  .tracker-metric:last-child{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;}
+  .tracker-metric:last-child .tracker-metric-label{margin-bottom:0;}
+  .entry-form{grid-template-columns:1fr 1fr;row-gap:8px;}
+  .entry-form input[type=text]{grid-column:1/-1;}
+  .entry-form input[type=number]{grid-column:1;}
+  .entry-form select{grid-column:2;}
+  .entry-form input[type=date]{grid-column:1;}
+  .entry-form .note-input{grid-column:1/-1;}
+  .entry-form .add-btn{grid-column:1/-1;}
+  .entry-row{grid-template-columns:1fr auto 24px;font-size:13px;gap:6px;}
+  .entry-row.hdr{display:none;}
+  .entry-date{display:none;}
+  .entry-cat{display:none;}
+  .compare-grid{grid-template-columns:1fr;}
+  .budget-bar-labels{font-size:11px;}
+}
+
+  /* Lock popup */
+  .lock-popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;}
+  .lock-popup{background:var(--surface);border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+  .lock-popup-icon{font-size:40px;margin-bottom:12px;}
+  .lock-popup-title{font-size:17px;font-weight:600;color:var(--text);margin-bottom:6px;}
+  .lock-popup-sub{font-size:13px;color:var(--text-3);margin-bottom:20px;}
+  .lock-popup-input{width:100%;font-family:var(--sans);font-size:15px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);outline:none;text-align:center;letter-spacing:.05em;margin-bottom:8px;}
+  .lock-popup-input:focus{border-color:var(--blue);}
+  .lock-popup-input.error{border-color:var(--red);animation:shake .3s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .lock-popup-error{font-size:12px;color:var(--red);min-height:18px;margin-bottom:12px;}
+  .lock-popup-btn{width:100%;font-family:var(--sans);font-size:14px;font-weight:600;padding:12px;border:none;border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;margin-bottom:8px;}
+  .lock-popup-btn:hover{opacity:.88;}
+  .lock-popup-cancel{font-family:var(--sans);font-size:13px;color:var(--text-3);background:none;border:none;cursor:pointer;padding:4px;}
+
+  .refresh-btn{position:fixed;top:14px;right:16px;width:36px;height:36px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(27,95,168,.3);z-index:50;transition:transform .3s;}
+  .refresh-btn:active{transform:scale(.9);}
+  .refresh-btn svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
+  .refresh-btn.spinning svg{animation:spin .7s linear infinite;}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+  /* Suggestion dropdown */
+  .suggest-wrap{position:relative;}
+  .suggest-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:100;max-height:200px;overflow-y:auto;display:none;margin-top:4px;}
+  .suggest-item{padding:9px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--border-light);}
+  .suggest-item:last-child{border-bottom:none;}
+  .suggest-item:hover,.suggest-item.active{background:var(--blue-bg);}
+  .suggest-item-name{color:var(--text);flex:1;}
+  .suggest-item-meta{font-size:11px;color:var(--text-3);white-space:nowrap;}
+
+  .day-filter-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .day-filter-row label{font-size:12px;color:var(--text-3);}
+  .day-filter-select{font-family:var(--sans);font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
+</style>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(reg=>{
+    reg.update(); // force check for updates every load
+  });
+  // When new SW is ready, reload page automatically
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    window.location.reload();
+  });
+}
+
+// DAY DROPDOWN
+function populateDayDropdown(){
+  const sel = document.getElementById('view-day');
+  if(!sel) return;
+  const todayStr = thaiDateStr();
+  const days = [...new Set(cachedEntries.map(e=>e.entry_date))].sort().reverse();
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="all">ทั้งเดือน</option>';
+  days.forEach(d=>{
+    const dt = new Date(d+'T00:00:00');
+    const label = `${dt.getDate()} ${['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][dt.getMonth()+1]}`;
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = label;
+    if(d === todayStr) opt.textContent += ' (วันนี้)';
+    sel.appendChild(opt);
+  });
+  // default: today if exists, else all
+  if(days.includes(todayStr)) sel.value = todayStr;
+  else if(prevVal && [...sel.options].some(o=>o.value===prevVal)) sel.value = prevVal;
+  else sel.value = 'all';
+}
+
+// SUGGESTION
+let suggestIdx = -1;
+
+function getSuggestions(query){
+  if(!query || query.length < 1) return [];
+  const q = query.toLowerCase();
+  // collect unique descriptions from allEntries
+  const seen = new Map();
+  allEntries.forEach(e=>{
+    const key = e.description.toLowerCase();
+    if(key.includes(q)){
+      if(!seen.has(e.description)){
+        seen.set(e.description, {desc: e.description, cat: e.cat, amt: Number(e.amt), count: 1});
+      } else {
+        seen.get(e.description).count++;
+      }
+    }
+  });
+  // sort by frequency, limit 6
+  return [...seen.values()].sort((a,b)=>b.count-a.count).slice(0,6);
+}
+
+function onDescInput(val){
+  suggestIdx = -1;
+  const items = getSuggestions(val);
+  const dd = document.getElementById('suggest-dropdown');
+  if(items.length === 0 || !val){dd.style.display='none';return;}
+  dd.innerHTML = items.map((item,i)=>`
+    <div class="suggest-item" data-i="${i}" 
+      onmousedown="selectSuggest('${item.desc.replace(/'/g,"\\'")}','${item.cat}',${item.amt})"
+      onmouseover="setSuggestActive(${i})">
+      <span class="suggest-item-name">${item.desc}</span>
+      <span class="suggest-item-meta">${item.cat} · ฿${item.amt.toLocaleString()}</span>
+    </div>`).join('');
+  dd.style.display='block';
+}
+
+function onDescKeydown(e){
+  const dd = document.getElementById('suggest-dropdown');
+  const items = dd.querySelectorAll('.suggest-item');
+  if(dd.style.display==='none'||items.length===0) return;
+  if(e.key==='ArrowDown'){e.preventDefault();suggestIdx=Math.min(suggestIdx+1,items.length-1);setSuggestActive(suggestIdx);}
+  else if(e.key==='ArrowUp'){e.preventDefault();suggestIdx=Math.max(suggestIdx-1,0);setSuggestActive(suggestIdx);}
+  else if(e.key==='Enter'&&suggestIdx>=0){
+    e.preventDefault();
+    items[suggestIdx].dispatchEvent(new Event('mousedown'));
+  }
+  else if(e.key==='Escape'){hideSuggest();}
+}
+
+function setSuggestActive(idx){
+  suggestIdx=idx;
+  document.querySelectorAll('.suggest-item').forEach((el,i)=>el.classList.toggle('active',i===idx));
+}
+
+function selectSuggest(desc, cat, amt){
+  document.getElementById('entry-desc').value = desc;
+  document.getElementById('entry-cat').value = cat;
+  document.getElementById('entry-amt').value = amt;
+  hideSuggest();
+  document.getElementById('entry-amt').focus();
+}
+
+function hideSuggest(){
+  const dd = document.getElementById('suggest-dropdown');
+  if(dd) dd.style.display='none';
+  suggestIdx=-1;
+}
+
+</script>
+</head>
+<body>
+<div class="page">
+  <button class="refresh-btn" id="refresh-btn" onclick="doRefresh()" title="รีเฟรช">
+    <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+  </button>
+  <div class="header">
+    <div class="header-label">Personal Finance · 2026</div>
+    <div class="header-title">Finance Planner</div>
+    <div class="header-sub">วางแผน · ติดตาม · ปรับ</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn" onclick="switchTab('planner',this)">📊 Planner</button>
+    <button class="tab-btn active" onclick="switchTab('tracker',this)">📝 Tracker</button>
+    <button class="tab-btn" onclick="switchTab('settings',this)">⚙️ Settings</button>
+  </div>
+
+  <!-- PLANNER -->
+  <div class="tab-panel" id="tab-planner"><div id="planner-content" style="display:none;">
+
+    <div class="card">
+      <div class="card-title">ปรับตัวแปร</div>
+      <div class="sliders-grid">
+        <div>
+          <div class="slider-row"><div><div class="slider-label">ค่าใช้จ่ายชีวิตประจำวัน</div><div class="slider-desc">อาหาร ของใช้ สังสรรค์ (ไม่รวมเทนนิส/DCA)</div></div><div class="slider-val" id="living-display">฿17,500</div></div>
+          <input type="range" id="living-slider" min="5000" max="30000" step="500" value="17500" oninput="update()"/>
+        </div>
+        <div>
+          <div class="slider-row"><div><div class="slider-label">เป้าเงินเหลือปลาย ธ.ค.</div><div class="slider-desc">ยอดขั้นต่ำที่อยากมีในบัญชี</div></div><div class="slider-val" id="target-display">฿100,000</div></div>
+          <input type="range" id="target-slider" min="50000" max="300000" step="10000" value="100000" oninput="update()"/>
+        </div>
+        <div>
+          <div class="slider-row"><div><div class="slider-label">DCA VOO ต่อเดือน</div><div class="slider-desc">ลงทุนอัตโนมัติทุกวันที่ 1</div></div><div class="slider-val" id="dca-display">฿5,000</div></div>
+          <input type="range" id="dca-slider" min="0" max="10000" step="500" value="5000" oninput="update()"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center;">
+      <div class="result-hero">
+        <div class="result-label">งบชีวิตประจำวันที่ตั้งไว้</div>
+        <div class="result-amount good" id="result-amount">฿17,500</div>
+        <div class="result-daily" id="result-daily">วันละประมาณ ฿583</div>
+        <div class="pill ok" id="result-pill"><div class="pill-dot"></div><span id="pill-text">พอดีตามแผน</span></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>฿0</span><span id="progress-mid">฿17,500/เดือน</span><span>฿30,000</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:58%;background:#9A6200;"></div></div>
+      </div>
+      <div class="alert ok" id="main-alert">✅ ถ้าคุมที่ ฿17,500/เดือน ปลาย ธ.ค. จะเหลือประมาณ ฿100,476 ตามเป้าครับ</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Fixed Costs ที่หักออกแล้ว</div>
+      <div class="fixed-grid">
+        <div class="fixed-item"><div class="fixed-item-label">ค่าเทนนิส</div><div class="fixed-item-val">฿3,600/เดือน</div></div>
+        <div class="fixed-item"><div class="fixed-item-label">AirPod Pro 3 ผ่อน 0%</div><div class="fixed-item-val">฿849/เดือน</div></div>
+        <div class="fixed-item"><div class="fixed-item-label">DCA VOO</div><div class="fixed-item-val" id="fixed-dca">฿5,000/เดือน</div></div>
+        <div class="fixed-item"><div class="fixed-item-label">เงินสะสมสุทธิ/เดือน</div><div class="fixed-item-val" id="fixed-net">฿21,018</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cashflow สรุป</div>
+      <table class="table">
+        <tr><th>รายการ</th><th>จำนวน</th></tr>
+        <tr><td>เงินเดือน net (27 ทุกเดือน)</td><td class="pos">+฿47,967</td></tr>
+        <tr><td><div>หัก Fixed costs</div><div class="sub-label">เทนนิส + AirPod + DCA</div></td><td class="neg" id="cf-fixed">−฿9,449</td></tr>
+        <tr><td>หัก ค่าใช้จ่ายประจำวัน</td><td class="neg" id="cf-living">−฿17,500</td></tr>
+        <tr class="total"><td>เหลือสะสม/เดือน</td><td id="cf-net" class="pos">฿21,018</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Timeline มิ.ย.–ธ.ค. 2026</div>
+      <div class="tl-row hdr"><div>เดือน</div><div>บิลก้อนใหญ่</div><div>สะสมสุทธิ</div><div style="text-align:right">ยอดปิด</div></div>
+      <div id="timeline-body"></div>
+      <div class="alert info" style="margin-top:14px;">📌 บิล KBANK ฿54,070 ครบกำหนด 25 มิ.ย. แต่เงินเดือนเข้า 27 มิ.ย. — ใช้ SCB ฿68k จ่ายก่อนได้ครับ</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ยอดคาดการณ์ปลาย ธ.ค. 2026</div>
+      <table class="table">
+        <tr><td>เงินในบัญชีตอนนี้ (10 มิ.ย.)</td><td class="pos">+฿186,661</td></tr>
+        <tr><td>เงินสะสมสุทธิ 7 เดือน</td><td class="pos" id="ye-savings">+฿147,126</td></tr>
+        <tr><td><div>บิลก้อนใหญ่ทั้งปี</div><div class="sub-label">บัตร KBANK + SCB + เทอม ส.ค. + เทอม ธ.ค.</div></td><td class="neg">−฿233,311</td></tr>
+        <tr class="total"><td>ยอดคงเหลือปลาย ธ.ค.</td><td id="ye-total" class="pos">฿100,476</td></tr>
+      </table>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>฿0</span><span id="ye-progress-label">฿100,476 / เป้า ฿100,000</span><span>฿200,000</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="ye-progress-fill" style="width:50%;background:#1A7A56;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- end planner-content -->
+  <!-- TRACKER -->
+  <div class="tab-panel active" id="tab-tracker">
+    <div class="notif-banner" id="notif-banner">⚠️ ใช้งบไปเกิน 80% แล้ว — ระวังด้วยนะครับ!</div>
+
+    <div class="filter-row">
+      <label>ดูเดือน</label>
+      <select id="view-month" onchange="loadEntries()">
+        <option value="6">มิถุนายน 2026</option>
+        <option value="7">กรกฎาคม 2026</option>
+        <option value="8">สิงหาคม 2026</option>
+        <option value="9">กันยายน 2026</option>
+        <option value="10">ตุลาคม 2026</option>
+        <option value="11">พฤศจิกายน 2026</option>
+        <option value="12">ธันวาคม 2026</option>
+      </select>
+      <div class="sync-status" id="sync-status"></div>
+      <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+
+    <div class="tracker-top">
+      <div class="tracker-metric"><div class="tracker-metric-label">งบเดือนนี้</div><div class="tracker-metric-val" id="tr-budget">฿17,500</div></div>
+      <div class="tracker-metric"><div class="tracker-metric-label">ใช้ไปแล้ว</div><div class="tracker-metric-val neg" id="tr-spent">฿0</div></div>
+      <div class="tracker-metric"><div class="tracker-metric-label">คงเหลือ</div><div class="tracker-metric-val pos" id="tr-remain">฿17,500</div></div>
+    </div>
+
+    <div class="tracker-daily-box" id="tr-daily-box">
+      <div><div class="tracker-daily-label">ใช้ได้เฉลี่ยวันละ</div><div class="tracker-daily-val" id="tr-daily-val">฿0</div></div>
+      <div class="tracker-daily-right" id="tr-daily-desc">—</div>
+    </div>
+
+    <div class="tracker-day-grid">
+      <div class="tracker-day-card"><div class="tracker-day-label">เมื่อวาน</div><div class="tracker-day-val muted" id="tr-yesterday">฿0</div></div>
+      <div class="tracker-day-card"><div class="tracker-day-label">วันนี้</div><div class="tracker-day-val muted" id="tr-today">฿0</div></div>
+    </div>
+
+    <div class="budget-bar-wrap">
+      <div class="budget-bar-labels"><span id="tr-bar-left">ใช้ไป 0%</span><span id="tr-bar-right">เหลือ ฿17,500</span></div>
+      <div class="budget-bar-bg"><div class="budget-bar-fill" id="tr-bar-fill" style="width:0%;background:var(--green);"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">เพิ่มรายการ</div>
+      <div class="entry-form">
+        <div class="suggest-wrap" style="position:relative;">
+          <input type="text" id="entry-desc" placeholder="เช่น ข้าวกลางวัน" autocomplete="off"
+            oninput="onDescInput(this.value)"
+            onkeydown="onDescKeydown(event)"
+            onblur="setTimeout(()=>hideSuggest(),150)"/>
+          <div class="suggest-dropdown" id="suggest-dropdown"></div>
+        </div>
+        <input type="number" id="entry-amt" placeholder="฿" min="0" step="1"/>
+        <select id="entry-cat">
+          <option value="อาหาร">🍜 อาหาร</option>
+          <option value="เครื่องดื่ม">☕ เครื่องดื่ม</option>
+          <option value="เดินทาง">🚗 เดินทาง</option>
+          <option value="ช้อปปิ้ง">🛍 ช้อปปิ้ง</option>
+          <option value="สังสรรค์">🍻 สังสรรค์</option>
+          <option value="สุขภาพ">💊 สุขภาพ</option>
+          <option value="อื่นๆ">📦 อื่นๆ</option>
+        </select>
+        <input type="date" id="entry-date"/>
+        <button class="add-btn" id="add-btn" onclick="addEntry()">+ เพิ่ม</button>
+      </div>
+      <input type="text" id="entry-note" placeholder="โน้ต (ไม่บังคับ)" class="note-input" style="width:100%;margin-top:8px;font-family:var(--sans);font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;"/>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">รายการทั้งหมด</div>
+        <div class="day-filter-row" style="margin-bottom:0;">
+          <label>วันที่</label>
+          <select class="day-filter-select" id="view-day" onchange="renderTracker()">
+            <option value="all">ทั้งเดือน</option>
+          </select>
+        </div>
+      </div>
+      <div id="entry-list-container"><div class="empty-state">กำลังโหลด...</div></div>
+    </div>
+
+    <div class="card" id="cat-card" style="display:none;">
+      <div class="card-title">แยกตามหมวด</div>
+      <div class="cat-breakdown" id="cat-breakdown"></div>
+    </div>
+
+    <div class="card" id="chart-card" style="display:none;">
+      <div class="card-title">รายจ่ายรายวัน</div>
+      <div class="chart-wrap"><canvas id="daily-chart"></canvas></div>
+    </div>
+
+    <div class="card" id="week-card" style="display:none;">
+      <div class="card-title">สรุปรายสัปดาห์</div>
+      <div class="week-grid" id="week-grid"></div>
+    </div>
+
+    <div class="card" id="compare-card" style="display:none;">
+      <div class="card-title">เทียบกับเดือนที่แล้ว</div>
+      <div class="compare-grid">
+        <div class="compare-item"><div class="compare-label" id="compare-prev-label">เดือนที่แล้ว</div><div class="compare-val" id="compare-prev">—</div></div>
+        <div class="compare-item"><div class="compare-label" id="compare-curr-label">เดือนนี้</div><div class="compare-val" id="compare-curr">—</div></div>
+      </div>
+      <div class="alert info" id="compare-msg" style="margin-top:10px;display:none;"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="tab-panel" id="tab-settings">
+    <div class="card">
+      <div class="card-title">งบแยกตามหมวด</div>
+      <div class="cat-budget-grid" id="cat-budget-grid"></div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text-3);">ตั้งงบ 0 = ไม่จำกัด</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">การแสดงผล</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+        <div><div style="font-size:13px;font-weight:500;">Dark Mode</div><div style="font-size:12px;color:var(--text-3);">ปรับธีมมืด</div></div>
+        <label style="position:relative;width:44px;height:24px;cursor:pointer;">
+          <input type="checkbox" id="dark-toggle" onchange="toggleDark()" style="opacity:0;width:0;height:0;"/>
+          <span id="dark-knob" style="position:absolute;inset:0;background:var(--border);border-radius:12px;transition:.2s;"></span>
+          <span id="dark-thumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ข้อมูล</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="export-btn" style="width:fit-content;" onclick="exportCSV()">⬇ Export CSV ทุกรายการ</button>
+        <div style="font-size:12px;color:var(--text-3);">ข้อมูลเก็บใน Supabase — sync ทุกอุปกรณ์อัตโนมัติ</div>
+      </div>
+    </div>
+  </div>
+
+<!-- PLANNER LOCK POPUP -->
+<div class="lock-popup-overlay" id="planner-lock-popup" style="display:none;">
+  <div class="lock-popup">
+    <div class="lock-popup-icon">🔒</div>
+    <div class="lock-popup-title">Planner ถูกล็อกไว้</div>
+    <div class="lock-popup-sub">ใส่รหัสผ่านเพื่อดูข้อมูล</div>
+    <input class="lock-popup-input" type="password" id="lock-input" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter')checkLock()"/>
+    <div class="lock-popup-error" id="lock-error"></div>
+    <button class="lock-popup-btn" onclick="checkLock()">ปลดล็อก</button>
+    <button class="lock-popup-cancel" onclick="closeLockPopup()">ยกเลิก</button>
+  </div>
+</div>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal" style="display:none;" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">✏️ แก้ไขรายการ</div>
+    <input type="hidden" id="edit-id"/>
+    <div class="modal-field"><label>รายการ</label><input type="text" id="edit-desc"/></div>
+    <div class="modal-field"><label>จำนวน (฿)</label><input type="number" id="edit-amt"/></div>
+    <div class="modal-field"><label>หมวด</label>
+      <select id="edit-cat">
+        <option value="อาหาร">🍜 อาหาร</option>
+        <option value="เครื่องดื่ม">☕ เครื่องดื่ม</option>
+        <option value="เดินทาง">🚗 เดินทาง</option>
+        <option value="ช้อปปิ้ง">🛍 ช้อปปิ้ง</option>
+        <option value="สังสรรค์">🍻 สังสรรค์</option>
+        <option value="สุขภาพ">💊 สุขภาพ</option>
+        <option value="อื่นๆ">📦 อื่นๆ</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>วันที่</label><input type="date" id="edit-date"/></div>
+    <div class="modal-field"><label>โน้ต</label><input type="text" id="edit-note" placeholder="ไม่บังคับ"/></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="saveEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+
+// Thai timezone date helper (UTC+7)
+function thaiDateStr(offsetDays=0){
+  const d = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Bangkok'}));
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0,10);
+}
+function thaiDate(offsetDays=0){
+  return new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Bangkok'}));
+}
+
+
+function doRefresh(){
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+  // update default date
+  document.getElementById('entry-date').value = thaiDateStr();
+  loadEntries().finally(()=>{
+    setTimeout(()=>btn.classList.remove('spinning'), 500);
+  });
+}
+
+// PLANNER LOCK POPUP
+const PLANNER_PASS = 'meksrv';
+function showLockPopup(){
+  document.getElementById('planner-content').style.display = 'none';
+  document.getElementById('planner-lock-popup').style.display = 'flex';
+  document.getElementById('lock-error').textContent = '';
+  document.getElementById('lock-input').value = '';
+  setTimeout(()=>document.getElementById('lock-input').focus(), 100);
+}
+function closeLockPopup(){
+  document.getElementById('planner-lock-popup').style.display = 'none';
+  document.getElementById('planner-content').style.display = 'none';
+  // go back to tracker tab
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('[onclick*="tracker"]').classList.add('active');
+  document.getElementById('tab-tracker').classList.add('active');
+}
+function checkLock(){
+  const val = document.getElementById('lock-input').value;
+  const inp = document.getElementById('lock-input');
+  const err = document.getElementById('lock-error');
+  if(val === PLANNER_PASS){
+    document.getElementById('planner-lock-popup').style.display = 'none';
+    document.getElementById('planner-content').style.display = 'block';
+    err.textContent = '';
+    inp.value = '';
+  } else {
+    err.textContent = '❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่';
+    inp.value = '';
+    inp.classList.add('error');
+    inp.focus();
+    setTimeout(()=>inp.classList.remove('error'), 400);
+  }
+}
+function initPlannerLock(){
+  showLockPopup();
+}
+
+const SUPABASE_URL='https://ahelypphgebpszhvmfrc.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoZWx5cHBoZ2VicHN6aHZtZnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNjQ5MTMsImV4cCI6MjA5NjY0MDkxM30.xIxfh1jeNSgHhqt2NX_V3d-eHxm_MQepoSGCXnBvfeE';
+const HEADERS={'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};
+const API=`${SUPABASE_URL}/rest/v1`;
+const Q=`?apikey=${SUPABASE_KEY}`;
+
+// PLANNER
+const SALARY=47967,TENNIS=3600,AIRPOD=849,START=186661,MONTHS=7;
+const BIG_BILLS=[
+  {month:'มิถุนายน',bill:55221,billLabel:'บัตร KBANK + คืนเพื่อน'},
+  {month:'กรกฎาคม',bill:15276,billLabel:'บัตร SCB + AirPod งวด 2'},
+  {month:'สิงหาคม',bill:81500,billLabel:'ค่าเทอม ปี 2 เทอม 1'},
+  {month:'กันยายน',bill:0,billLabel:''},
+  {month:'ตุลาคม',bill:0,billLabel:''},
+  {month:'พฤศจิกายน',bill:0,billLabel:''},
+  {month:'ธันวาคม',bill:81500,billLabel:'ค่าเทอม ปี 2 เทอม 2'},
+];
+const CAT_COLORS={อาหาร:'#1A7A56',เครื่องดื่ม:'#6B4C9A',เดินทาง:'#1B5FA8',ช้อปปิ้ง:'#7B3FA8',สังสรรค์:'#9A6200',สุขภาพ:'#C0392B',อื่นๆ:'#6B6B65'};
+const MONTH_NAMES=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const ALL_CATS=Object.keys(CAT_COLORS);
+let cachedEntries=[],allEntries=[],catBudgets={},dailyChart=null;
+
+function fmt(n){const abs=Math.abs(Math.round(n));return(n<0?'−':'')+'฿'+abs.toLocaleString('th-TH');}
+
+function update(){
+  const living=+document.getElementById('living-slider').value;
+  const target=+document.getElementById('target-slider').value;
+  const dca=+document.getElementById('dca-slider').value;
+  document.getElementById('living-display').textContent=fmt(living);
+  document.getElementById('target-display').textContent=fmt(target);
+  document.getElementById('dca-display').textContent=fmt(dca);
+  const fixed=TENNIS+AIRPOD+dca;
+  const net=SALARY-fixed-living;
+  document.getElementById('result-amount').textContent=fmt(living);
+  document.getElementById('result-daily').textContent='วันละประมาณ '+fmt(Math.round(living/30));
+  document.getElementById('progress-mid').textContent=fmt(living)+'/เดือน';
+  document.getElementById('fixed-dca').textContent=fmt(dca)+'/เดือน';
+  document.getElementById('fixed-net').textContent=fmt(net);
+  document.getElementById('cf-fixed').textContent='−฿'+fixed.toLocaleString('th-TH');
+  document.getElementById('cf-living').textContent='−฿'+living.toLocaleString('th-TH');
+  const netEl=document.getElementById('cf-net');
+  netEl.textContent=(net>=0?'+':'−')+'฿'+Math.abs(net).toLocaleString('th-TH');
+  netEl.className=net>=0?'pos':'neg';
+  document.getElementById('progress-fill').style.width=Math.min(living/30000*100,100)+'%';
+  let bal=START,html='';
+  BIG_BILLS.forEach(m=>{
+    bal+=net-m.bill;
+    const cls=bal<60000?'crit':bal<100000?'low':'safe';
+    const bHtml=m.bill>0?`<div style="color:var(--red)">−฿${m.bill.toLocaleString()}</div><div class="tl-bill">${m.billLabel}</div>`:'<span style="color:var(--text-3)">—</span>';
+    const nHtml=net>=0?`<span class="pos">+฿${net.toLocaleString()}</span>`:`<span class="neg">−฿${Math.abs(net).toLocaleString()}</span>`;
+    html+=`<div class="tl-row ${cls}"><div class="tl-month">${m.month}</div><div>${bHtml}</div><div class="tl-net">${nHtml}</div><div class="tl-balance">${fmt(bal)}</div></div>`;
+  });
+  document.getElementById('timeline-body').innerHTML=html;
+  const totalSav=net*MONTHS;
+  const yearEnd=START+totalSav-BIG_BILLS.reduce((s,m)=>s+m.bill,0);
+  const diff=yearEnd-target;
+  document.getElementById('ye-savings').textContent=(totalSav>=0?'+':'−')+'฿'+Math.abs(totalSav).toLocaleString('th-TH');
+  const yeEl=document.getElementById('ye-total');
+  yeEl.textContent=fmt(yearEnd);yeEl.className=yearEnd>=target?'pos':yearEnd>=0?'warn':'neg';
+  const yePct=Math.min(Math.max(yearEnd/200000*100,0),100);
+  document.getElementById('ye-progress-fill').style.width=yePct+'%';
+  document.getElementById('ye-progress-fill').style.background=yearEnd>=target?'#1A7A56':yearEnd>=0?'#9A6200':'#C0392B';
+  document.getElementById('ye-progress-label').textContent=fmt(yearEnd)+' / เป้า '+fmt(target);
+  const amtEl=document.getElementById('result-amount'),pillEl=document.getElementById('result-pill'),pillTxt=document.getElementById('pill-text'),alertEl=document.getElementById('main-alert'),pfill=document.getElementById('progress-fill');
+  if(diff>=0){amtEl.className='result-amount good';pillEl.className='pill good';pillTxt.textContent='ถึงเป้า ✓';alertEl.className='alert ok';alertEl.textContent=`✅ ถ้าคุมที่ ${fmt(living)}/เดือน ปลาย ธ.ค. จะเหลือ ${fmt(yearEnd)} — เกินเป้า ${fmt(diff)} ครับ`;pfill.style.background='#1A7A56';}
+  else if(diff>-30000){amtEl.className='result-amount ok';pillEl.className='pill ok';pillTxt.textContent='ใกล้เป้า';alertEl.className='alert warn';alertEl.textContent=`⚠️ ปลาย ธ.ค. คาดว่าจะเหลือ ${fmt(yearEnd)} — ต่ำกว่าเป้า ${fmt(Math.abs(diff))}`;pfill.style.background='#9A6200';}
+  else{amtEl.className='result-amount tight';pillEl.className='pill tight';pillTxt.textContent='ไม่ถึงเป้า';alertEl.className='alert bad';alertEl.textContent=`🚨 ปลาย ธ.ค. คาดว่าจะเหลือแค่ ${fmt(yearEnd)} — ต่ำกว่าเป้ามาก`;pfill.style.background='#C0392B';}
+  window._budget=living;
+  renderCatBudgetSettings();
+}
+
+// SYNC STATUS
+function setSyncStatus(msg,color='var(--text-3)'){
+  document.getElementById('sync-status').innerHTML=`<span class="status-dot" style="background:${color}"></span>${msg}`;
+}
+
+// LOAD ENTRIES
+async function loadEntries(){
+  const month=+document.getElementById('view-month').value;
+  const from=`2026-${String(month).padStart(2,'0')}-01`;
+  const lastDay=new Date(2026,month,0).getDate();
+  const to=`2026-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+  setSyncStatus('กำลังโหลด...','#9B9B94');
+  try{
+    const res=await fetch(`${API}/entries${Q}&entry_date=gte.${from}&entry_date=lte.${to}&order=entry_date.desc,created_at.desc`,{headers:HEADERS});
+    if(!res.ok)throw new Error();
+    cachedEntries=await res.json();
+    setSyncStatus('ซิงก์แล้ว','#1A7A56');
+    populateDayDropdown();
+    // also load all entries for compare
+    const resAll=await fetch(`${API}/entries${Q}&order=entry_date.desc`,{headers:HEADERS});
+    allEntries=resAll.ok?await resAll.json():[];
+    renderTracker();
+  }catch(e){
+    setSyncStatus('เชื่อมต่อไม่ได้','#C0392B');
+    document.getElementById('entry-list-container').innerHTML='<div class="empty-state">เชื่อมต่อฐานข้อมูลไม่ได้ กรุณาลองใหม่ครับ</div>';
+  }
+}
+
+// ADD
+async function addEntry(){
+  const desc=document.getElementById('entry-desc').value.trim();
+  const amt=parseFloat(document.getElementById('entry-amt').value);
+  const cat=document.getElementById('entry-cat').value;
+  const date=document.getElementById('entry-date').value;
+  const note=document.getElementById('entry-note').value.trim();
+  if(!desc||!amt||amt<=0||!date){alert('กรุณากรอกข้อมูลให้ครบครับ');return;}
+  const btn=document.getElementById('add-btn');btn.disabled=true;btn.textContent='กำลังบันทึก...';
+  setSyncStatus('กำลังบันทึก...','#9A6200');
+  try{
+    const res=await fetch(`${API}/entries${Q}`,{method:'POST',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify({description:desc,amt,cat,entry_date:date,note:note||null})});
+    if(!res.ok)throw new Error();
+    document.getElementById('entry-desc').value='';document.getElementById('entry-amt').value='';document.getElementById('entry-note').value='';
+    setSyncStatus('บันทึกแล้ว ✓','#1A7A56');
+    await loadEntries();
+  }catch(e){setSyncStatus('บันทึกไม่สำเร็จ','#C0392B');alert('บันทึกไม่สำเร็จ กรุณาลองใหม่ครับ');}
+  btn.disabled=false;btn.textContent='+ เพิ่ม';
+}
+
+// DELETE
+async function deleteEntry(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  setSyncStatus('กำลังลบ...','#9A6200');
+  try{
+    const res=await fetch(`${API}/entries${Q}&id=eq.${id}`,{method:'DELETE',headers:HEADERS});
+    if(!res.ok)throw new Error();
+    setSyncStatus('ลบแล้ว','#1A7A56');await loadEntries();
+  }catch(e){setSyncStatus('ลบไม่สำเร็จ','#C0392B');}
+}
+
+// EDIT MODAL
+function openEdit(e){
+  document.getElementById('edit-id').value=e.id;
+  document.getElementById('edit-desc').value=e.description;
+  document.getElementById('edit-amt').value=e.amt;
+  document.getElementById('edit-cat').value=e.cat;
+  document.getElementById('edit-date').value=e.entry_date;
+  document.getElementById('edit-note').value=e.note||'';
+  document.getElementById('edit-modal').style.display='flex';
+}
+function closeModal(){document.getElementById('edit-modal').style.display='none';}
+async function saveEdit(){
+  const id=document.getElementById('edit-id').value;
+  const body={description:document.getElementById('edit-desc').value,amt:parseFloat(document.getElementById('edit-amt').value),cat:document.getElementById('edit-cat').value,entry_date:document.getElementById('edit-date').value,note:document.getElementById('edit-note').value||null};
+  setSyncStatus('กำลังบันทึก...','#9A6200');
+  try{
+    const res=await fetch(`${API}/entries${Q}&id=eq.${id}`,{method:'PATCH',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify(body)});
+    if(!res.ok)throw new Error();
+    closeModal();setSyncStatus('บันทึกแล้ว ✓','#1A7A56');await loadEntries();
+  }catch(e){setSyncStatus('บันทึกไม่สำเร็จ','#C0392B');}
+}
+
+// EXPORT CSV
+function exportCSV(){
+  const rows=[['id','description','amt','cat','entry_date','note'],...allEntries.map(e=>[e.id,e.description,e.amt,e.cat,e.entry_date,e.note||''])];
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='finance_export.csv';a.click();
+}
+
+// DARK MODE
+function toggleDark(){
+  const on=document.getElementById('dark-toggle').checked;
+  document.body.classList.toggle('dark',on);
+  document.getElementById('dark-knob').style.background=on?'var(--blue)':'var(--border)';
+  document.getElementById('dark-thumb').style.left=on?'23px':'3px';
+  localStorage.setItem('darkMode',on?'1':'0');
+}
+
+// CAT BUDGET SETTINGS
+function renderCatBudgetSettings(){
+  const grid=document.getElementById('cat-budget-grid');
+  if(!grid)return;
+  grid.innerHTML=ALL_CATS.map(cat=>{
+    const bud=catBudgets[cat]||0;
+    const spent=cachedEntries.filter(e=>e.cat===cat).reduce((s,e)=>s+Number(e.amt),0);
+    const pct=bud>0?Math.min(spent/bud*100,100):0;
+    const color=CAT_COLORS[cat]||'#6B6B65';
+    return `<div class="cat-budget-row">
+      <div class="cat-budget-name">${cat}</div>
+      <div class="cat-budget-bar-wrap"><div class="cat-budget-bar" style="width:${pct}%;background:${color}"></div></div>
+      <input class="cat-budget-input" type="number" placeholder="ไม่จำกัด" value="${bud||''}" min="0" step="100" onchange="setCatBudget('${cat}',this.value)"/>
+    </div>`;
+  }).join('');
+}
+
+function setCatBudget(cat,val){
+  catBudgets[cat]=parseFloat(val)||0;
+  localStorage.setItem('catBudgets',JSON.stringify(catBudgets));
+  renderTracker();
+}
+
+// RENDER TRACKER
+function renderTracker(){
+  const budget=window._budget||17500;
+  const spent=cachedEntries.reduce((s,e)=>s+Number(e.amt),0);
+  const remain=budget-spent;
+  const pct=Math.min(spent/budget*100,100);
+
+  document.getElementById('tr-budget').textContent=fmt(budget);
+  document.getElementById('tr-spent').textContent=fmt(spent);
+  document.getElementById('tr-remain').textContent=fmt(remain);
+  document.getElementById('tr-remain').className='tracker-metric-val '+(remain<0?'neg':remain<budget*.2?'warn':'pos');
+  document.getElementById('tr-bar-left').textContent=`ใช้ไป ${Math.round(pct)}%`;
+  document.getElementById('tr-bar-right').textContent=`เหลือ ${fmt(Math.max(remain,0))}`;
+  const fill=document.getElementById('tr-bar-fill');
+  fill.style.width=pct+'%';fill.style.background=pct>=100?'#C0392B':pct>=80?'#9A6200':'#1A7A56';
+
+  // Notification banner
+  const banner=document.getElementById('notif-banner');
+  banner.style.display=pct>=80&&remain>0?'block':'none';
+
+  // Today / Yesterday
+  const todayStr=thaiDateStr(0);
+  const ydStr=thaiDateStr(-1);
+  const todaySpend=cachedEntries.filter(e=>e.entry_date===todayStr).reduce((s,e)=>s+Number(e.amt),0);
+  const ydSpend=cachedEntries.filter(e=>e.entry_date===ydStr).reduce((s,e)=>s+Number(e.amt),0);
+  const todayEl=document.getElementById('tr-today'),ydEl=document.getElementById('tr-yesterday');
+  todayEl.textContent=fmt(todaySpend);todayEl.className='tracker-day-val '+(todaySpend>0?'neg':'muted');
+  ydEl.textContent=fmt(ydSpend);ydEl.className='tracker-day-val '+(ydSpend>0?'neg':'muted');
+
+  // Daily budget remaining
+  const today=thaiDate();
+  const viewMonth=+document.getElementById('view-month').value;
+  const isCurrent=today.getMonth()+1===viewMonth&&today.getFullYear()===2026;
+  const daysLeft=isCurrent?new Date(2026,viewMonth,0).getDate()-today.getDate()+1:0;
+  const dailyBud=daysLeft>0&&remain>0?Math.floor(remain/daysLeft):0;
+  const dvEl=document.getElementById('tr-daily-val'),ddEl=document.getElementById('tr-daily-desc');
+  if(daysLeft>0&&remain>0){dvEl.textContent=fmt(dailyBud);ddEl.textContent=`เหลืออีก ${daysLeft} วัน\n(${today.getDate()}–${new Date(2026,viewMonth,0).getDate()} ${MONTH_NAMES[viewMonth]})`;ddEl.style.whiteSpace='pre-line';}
+  else if(remain<=0){dvEl.textContent='฿0';ddEl.textContent='งบเดือนนี้หมดแล้ว';}
+  else{dvEl.textContent='—';ddEl.textContent='ดูได้เฉพาะเดือนปัจจุบัน';}
+
+  // Entry list
+  const container=document.getElementById('entry-list-container');
+  const selDay = document.getElementById('view-day')?.value || 'all';
+  const displayEntries = selDay === 'all' ? cachedEntries : cachedEntries.filter(e=>e.entry_date===selDay);
+  if(cachedEntries.length===0){container.innerHTML='<div class="empty-state">ยังไม่มีรายการเดือนนี้</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
+  if(displayEntries.length===0){container.innerHTML='<div class="empty-state">ไม่มีรายการในวันที่เลือก</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
+  let html=`<div class="entry-row hdr"><div>วันที่</div><div>รายการ</div><div style="text-align:right">จำนวน</div><div>หมวด</div><div></div></div>`;
+  displayEntries.forEach(e=>{
+    const d=new Date(e.entry_date+'T00:00:00');
+    const dateStr=`${d.getDate()} ${MONTH_NAMES[d.getMonth()+1]}`;
+    const color=CAT_COLORS[e.cat]||'#6B6B65';
+    const catExceed=catBudgets[e.cat]>0&&cachedEntries.filter(x=>x.cat===e.cat).reduce((s,x)=>s+Number(x.amt),0)>catBudgets[e.cat];
+    html+=`<div class="entry-row">
+      <div class="entry-date">${dateStr}</div>
+      <div>
+        <div>${e.description}${catExceed?` <span style="font-size:10px;color:var(--red)">เกินงบ</span>`:''}</div>
+        ${e.note?`<div class="entry-note">${e.note}</div>`:''}
+        <div style="margin-top:2px;display:none;" class="mobile-meta"><span class="entry-cat" style="background:${color}18;color:${color}">${dateStr} · ${e.cat}</span></div>
+      </div>
+      <div class="entry-amt neg" style="text-align:right">−฿${Number(e.amt).toLocaleString()}</div>
+      <div><span class="entry-cat" style="background:${color}18;color:${color}">${e.cat}</span></div>
+      <div style="display:flex;gap:2px;">
+        <button class="edit-btn" onclick='openEdit(${JSON.stringify(e)})'>✏️</button>
+        <button class="del-btn" onclick="deleteEntry(${e.id})">×</button>
+      </div>
+    </div>`;
+  });
+  container.innerHTML=html;
+
+  // Cat breakdown
+  const cats={};
+  cachedEntries.forEach(e=>{cats[e.cat]=(cats[e.cat]||0)+Number(e.amt);});
+  const maxAmt=Math.max(...Object.values(cats));
+  let catHtml='';
+  Object.entries(cats).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt])=>{
+    const color=CAT_COLORS[cat]||'#6B6B65';
+    const bud=catBudgets[cat]||0;
+    const budText=bud>0?` / ฿${bud.toLocaleString()}`:'';
+    const over=bud>0&&amt>bud;
+    catHtml+=`<div class="cat-row">
+      <div class="cat-name">${cat}</div>
+      <div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${maxAmt>0?amt/maxAmt*100:0}%;background:${color}"></div></div>
+      <div class="cat-info" style="${over?'color:var(--red)':''}">฿${amt.toLocaleString()}${budText}${over?' ⚠️':''}</div>
+    </div>`;
+  });
+  document.getElementById('cat-breakdown').innerHTML=catHtml;
+  document.getElementById('cat-card').style.display='block';
+
+  // Daily chart
+  const dayMap={};
+  cachedEntries.forEach(e=>{dayMap[e.entry_date]=(dayMap[e.entry_date]||0)+Number(e.amt);});
+  const sortedDays=Object.keys(dayMap).sort();
+  const month=viewMonth;
+  const daysInMonth=new Date(2026,month,0).getDate();
+  const allDays=Array.from({length:daysInMonth},(_,i)=>`2026-${String(month).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+  const chartData=allDays.map(d=>dayMap[d]||0);
+  const chartLabels=allDays.map(d=>d.slice(8));
+  const ctx=document.getElementById('daily-chart').getContext('2d');
+  if(dailyChart)dailyChart.destroy();
+  const maxVal = Math.max(...chartData, 1);
+  const niceMax = maxVal <= 500 ? Math.ceil(maxVal/100)*100 : maxVal <= 2000 ? Math.ceil(maxVal/500)*500 : Math.ceil(maxVal/1000)*1000;
+  dailyChart=new Chart(ctx,{type:'bar',data:{labels:chartLabels,datasets:[{data:chartData,backgroundColor:chartData.map(v=>v===0?'#E0E8F0':'#1B5FA8'),borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`฿${c.raw.toLocaleString()}`}}},scales:{x:{ticks:{font:{size:10},maxRotation:0},grid:{display:false}},y:{min:0,max:niceMax||500,ticks:{maxTicksLimit:5,callback:function(v){if(v===0)return'';if(v>=1000){var k=v/1000;return'฿'+(Number.isInteger(k)?k:k.toFixed(1))+'k';}return'฿'+Math.round(v);},font:{size:10}},grid:{color:'#F0F0EC'}}}}});
+  document.getElementById('chart-card').style.display='block';
+
+  // Week summary
+  const weeks=[{label:'สัปดาห์ 1 (1–7)',days:d=>d>=1&&d<=7},{label:'สัปดาห์ 2 (8–14)',days:d=>d>=8&&d<=14},{label:'สัปดาห์ 3 (15–21)',days:d=>d>=15&&d<=21},{label:'สัปดาห์ 4 (22+)',days:d=>d>=22}];
+  let weekHtml='';
+  weeks.forEach(w=>{
+    const wSpent=cachedEntries.filter(e=>{const d=new Date(e.entry_date+'T00:00:00').getDate();return w.days(d);}).reduce((s,e)=>s+Number(e.amt),0);
+    weekHtml+=`<div class="week-row"><span style="color:var(--text-2);font-size:13px;">${w.label}</span><span class="neg" style="font-family:var(--mono);font-size:13px;">${wSpent>0?'−'+fmt(wSpent):'฿0'}</span></div>`;
+  });
+  document.getElementById('week-grid').innerHTML=weekHtml;
+  document.getElementById('week-card').style.display='block';
+
+  // Compare prev month
+  const prevMonth=month>1?month-1:null;
+  if(prevMonth){
+    const prevSpent=allEntries.filter(e=>new Date(e.entry_date+'T00:00:00').getMonth()+1===prevMonth).reduce((s,e)=>s+Number(e.amt),0);
+    const currSpent=spent;
+    const diff2=currSpent-prevSpent;
+    document.getElementById('compare-prev-label').textContent=MONTH_NAMES[prevMonth]||'เดือนที่แล้ว';
+    document.getElementById('compare-curr-label').textContent=MONTH_NAMES[month]||'เดือนนี้';
+    document.getElementById('compare-prev').textContent=prevSpent>0?fmt(prevSpent):'ไม่มีข้อมูล';
+    document.getElementById('compare-curr').textContent=fmt(currSpent);
+    const msgEl=document.getElementById('compare-msg');
+    if(prevSpent>0){
+      msgEl.style.display='block';
+      if(diff2>0){msgEl.className='alert warn';msgEl.textContent=`⚠️ เดือนนี้ใช้มากกว่าเดือนที่แล้ว ${fmt(diff2)}`;}
+      else if(diff2<0){msgEl.className='alert ok';msgEl.textContent=`✅ เดือนนี้ประหยัดกว่าเดือนที่แล้ว ${fmt(Math.abs(diff2))}`;}
+      else{msgEl.className='alert info';msgEl.textContent='เท่ากับเดือนที่แล้วพอดี';}
+    }else{msgEl.style.display='none';}
+    document.getElementById('compare-card').style.display='block';
+  }else{document.getElementById('compare-card').style.display='none';}
+
+  renderCatBudgetSettings();
+}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='tracker')loadEntries();
+  if(name==='settings')renderCatBudgetSettings();
+  if(name==='planner')initPlannerLock();
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('entry-date').value=thaiDateStr();
+  const m=thaiDate().getMonth()+1;
+  const sel=document.getElementById('view-month');
+  for(let o of sel.options){if(+o.value===m){o.selected=true;break;}}
+  // load saved settings
+  const saved=localStorage.getItem('catBudgets');
+  if(saved)try{catBudgets=JSON.parse(saved);}catch(e){}
+  if(localStorage.getItem('darkMode')==='1'){document.getElementById('dark-toggle').checked=true;toggleDark();}
+  loadEntries();
+  // PWA install hint
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._pwaPrompt=e;});
+});
+
+update();
+</script>
+</body>
+</html>
