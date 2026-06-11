@@ -965,6 +965,11 @@ function renderTracker(){
   const ctx=document.getElementById('daily-chart').getContext('2d');
   if(dailyChart)dailyChart.destroy();
   const maxVal = Math.max(...chartData.map(Number), 1);
+  // DEBUG - remove after fix
+  if(window._chartDebugShown !== true){
+    window._chartDebugShown = true;
+    alert('maxVal='+maxVal+' niceMax='+Math.ceil(maxVal/100)*100+' chartData sample='+chartData.slice(8,12).join(','));
+  }
   const niceMax = maxVal <= 500 ? Math.ceil(maxVal/100)*100 : maxVal <= 2000 ? Math.ceil(maxVal/500)*500 : Math.ceil(maxVal/1000)*1000;
   dailyChart=new Chart(ctx,{type:'bar',data:{labels:chartLabels,datasets:[{data:chartData,backgroundColor:chartData.map(v=>v===0?'#E0E8F0':'#1B5FA8'),borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`฿${c.raw.toLocaleString()}`}}},scales:{x:{ticks:{font:{size:10},maxRotation:0},grid:{display:false}},y:{min:0,max:niceMax||500,ticks:{maxTicksLimit:5,callback:function(v){if(v===0)return'';if(v>=1000){var k=v/1000;return'฿'+(Number.isInteger(k)?k:k.toFixed(1))+'k';}return'฿'+Math.round(v);},font:{size:10}},grid:{color:'#F0F0EC'}}}}});
   document.getElementById('chart-card').style.display='block';
