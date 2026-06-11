@@ -414,6 +414,36 @@ function addHolding(){
   renderPortfolio();
 }
 
+
+function openPortEdit(i){
+  var h = holdings[i];
+  document.getElementById('port-edit-idx').value = i;
+  document.getElementById('port-edit-ticker').value = h.ticker;
+  document.getElementById('port-edit-name').value = h.name;
+  document.getElementById('port-edit-shares').value = h.shares;
+  document.getElementById('port-edit-avg').value = h.avgCost;
+  document.getElementById('port-edit-market').value = h.market;
+  document.getElementById('port-edit-modal').style.display = 'flex';
+}
+
+function closePortEdit(){
+  document.getElementById('port-edit-modal').style.display = 'none';
+}
+
+function savePortEdit(){
+  var i = parseInt(document.getElementById('port-edit-idx').value);
+  holdings[i] = {
+    ticker: document.getElementById('port-edit-ticker').value.trim().toUpperCase(),
+    name:   document.getElementById('port-edit-name').value.trim(),
+    shares: parseFloat(document.getElementById('port-edit-shares').value),
+    avgCost:parseFloat(document.getElementById('port-edit-avg').value),
+    market: document.getElementById('port-edit-market').value,
+  };
+  saveHoldings();
+  closePortEdit();
+  renderPortfolio();
+}
+
 function removeHolding(i){
   if(!confirm('ลบ '+holdings[i].ticker+'?'))return;
   holdings.splice(i,1);
@@ -428,24 +458,21 @@ async function fetchPrices(){
   btn.innerHTML = '<span>⏳</span> กำลังดึงข้อมูล...';
   status.textContent = 'กำลังเชื่อมต่อ...';
 
-  try {
-    // Fetch USD/THB rate
-    const fxRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDTHB=X?interval=1d&range=1d');
-    if(fxRes.ok){
-      const fxData = await fxRes.json();
-      const rate = fxData?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if(rate) usdThb = rate;
-    }
+  const PROXY = 'https://api.allorigins.win/get?url=';
+  function proxyUrl(url){ return PROXY + encodeURIComponent(url); }
 
-    // Build tickers list
+  try {
+    // Build all tickers
     const thaiTickers = holdings.filter(h=>h.market==='TH').map(h=>h.ticker+'.BK');
     const usTickers   = holdings.filter(h=>h.market==='US').map(h=>h.ticker);
-    const allTickers  = [...thaiTickers, ...usTickers, 'USDTHB=X'];
-    const symbolStr   = allTickers.join(',');
+    const allSymbols  = [...thaiTickers, ...usTickers, 'USDTHB=X'].join(',');
 
-    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/spark?symbols=${symbolStr}&range=1d&interval=1d`);
-    if(!res.ok) throw new Error('fetch failed');
-    const data = await res.json();
+    // Fetch via proxy
+    const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/spark?symbols='+allSymbols+'&range=1d&interval=1d';
+    const res = await fetch(proxyUrl(yahooUrl));
+    if(!res.ok) throw new Error('proxy failed');
+    const outer = await res.json();
+    const data = JSON.parse(outer.contents);
     const spark = data?.spark?.result || [];
 
     spark.forEach(function(item){
@@ -454,6 +481,7 @@ async function fetchPrices(){
       if(price){
         const sym = item.symbol.replace('.BK','');
         livePrice[sym] = price;
+        if(sym === 'USDTHB=X') usdThb = price;
       }
     });
 
@@ -462,6 +490,7 @@ async function fetchPrices(){
     renderPortfolio();
   } catch(e) {
     status.textContent = 'ดึงข้อมูลไม่ได้ — ใช้ราคาที่บันทึกไว้';
+    renderPortfolio();
   }
 
   btn.classList.remove('loading');
@@ -520,38 +549,104 @@ function renderPortfolio(){
   renderRows(thaiH, 'port-thai-body', false);
   renderRows(usH,   'port-us-body',   true);
 
-  // Summary
-  const totalPnl = totalVal - totalCost;
-  const totalPct = totalCost>0 ? (totalPnl/totalCost*100) : 0;
-  document.getElementById('port-total-val').textContent  = totalVal>0?'฿'+Math.round(totalVal).toLocaleString():'—';
-  document.getElementById('port-total-cost').textContent = totalCost>0?'฿'+Math.round(totalCost).toLocaleString():'—';
-  const pnlEl = document.getElementById('port-total-pnl');
-  pnlEl.textContent = totalVal>0?(totalPnl>=0?'+':'')+' ฿'+Math.round(Math.abs(totalPnl)).toLocaleString()+' ('+totalPct.toFixed(1)+'%)':'—';
-  pnlEl.className = 'port-metric-val '+(totalPnl>=0?'pos':'neg');
-  document.getElementById('port-fx-rate').textContent = 'USD/THB: '+usdThb.toFixed(2);
+  // Compute TH/US subtotals
+  var thVal=0,thCost=0,usVal=0,usCost=0;
+  thaiH.forEach(function(h){
+    var price=livePrice[h.ticker]||h.avgCost;
+    thVal+=price*h.shares; thCost+=h.avgCost*h.shares;
+  });
+  usH.forEach(function(h){
+    var price=livePrice[h.ticker]||h.avgCost;
+    usVal+=(price*h.shares*usdThb); usCost+=(h.avgCost*h.shares*usdThb);
+  });
+  totalVal=thVal+usVal; totalCost=thCost+usCost;
+  var totalPnl=totalVal-totalCost;
+  var totalPct=totalCost>0?(totalPnl/totalCost*100):0;
 
-  // Allocation bar
-  const segments = holdings.map(function(h,i){
-    const price = livePrice[h.ticker] || h.avgCost;
-    const val = h.market==='US' ? price*h.shares*usdThb : price*h.shares;
-    return {ticker:h.ticker, val:val, color:PORT_COLORS[i%PORT_COLORS.length]};
-  }).filter(s=>s.val>0);
-  const totalSeg = segments.reduce((s,x)=>s+x.val,0);
-  const barEl = document.getElementById('port-alloc-bar');
-  const legEl = document.getElementById('port-alloc-legend');
-  if(barEl && totalSeg>0){
-    barEl.innerHTML = segments.map(s=>`<div class="port-alloc-seg" style="width:${(s.val/totalSeg*100).toFixed(1)}%;background:${s.color};"></div>`).join('');
-    legEl.innerHTML = segments.map(s=>`<div class="port-alloc-item"><div class="port-alloc-dot" style="background:${s.color};"></div>${s.ticker} ${(s.val/totalSeg*100).toFixed(1)}%</div>`).join('');
+  function fmtPnl(pnl,cost){
+    var pct=cost>0?(pnl/cost*100):0;
+    return (pnl>=0?'+':'')+' ฿'+Math.round(Math.abs(pnl)).toLocaleString()+' ('+pct.toFixed(1)+'%)';
   }
+
+  // Overall summary
+  document.getElementById('port-total-val').textContent = '฿'+Math.round(totalVal).toLocaleString();
+  document.getElementById('port-total-val').className = 'port-metric-val';
+  document.getElementById('port-total-cost').textContent = '฿'+Math.round(totalCost).toLocaleString();
+  var pnlEl=document.getElementById('port-total-pnl');
+  pnlEl.textContent=fmtPnl(totalPnl,totalCost);
+  pnlEl.className='port-metric-val '+(totalPnl>=0?'pos':'neg');
+
+  // TH/US summary
+  var thPnl=thVal-thCost, usPnl=usVal-usCost;
+  var thValEl=document.getElementById('port-th-val');
+  var thPnlEl=document.getElementById('port-th-pnl');
+  var usValEl=document.getElementById('port-us-val');
+  var usPnlEl=document.getElementById('port-us-pnl');
+  if(thValEl){thValEl.textContent='฿'+Math.round(thVal).toLocaleString();thValEl.className='port-metric-val';}
+  if(thPnlEl){thPnlEl.textContent=(thPnl>=0?'+':'')+' ฿'+Math.round(Math.abs(thPnl)).toLocaleString();thPnlEl.className='port-metric-val '+(thPnl>=0?'pos':'neg');}
+  if(usValEl){usValEl.textContent='฿'+Math.round(usVal).toLocaleString();usValEl.className='port-metric-val';}
+  if(usPnlEl){usPnlEl.textContent=(usPnl>=0?'+':'')+' ฿'+Math.round(Math.abs(usPnl)).toLocaleString();usPnlEl.className='port-metric-val '+(usPnl>=0?'pos':'neg');}
+
+  document.getElementById('port-fx-rate').textContent='USD/THB: '+usdThb.toFixed(2);
+
+  // Donut charts
+  function drawDonut(svgId, legendId, items, colors){
+    var svgEl=document.getElementById(svgId);
+    var legEl=document.getElementById(legendId);
+    if(!svgEl||!legEl) return;
+    var total=items.reduce(function(s,x){return s+x.val;},0);
+    if(total<=0){svgEl.innerHTML='';legEl.innerHTML='';return;}
+    var cx=60,cy=60,r=48,sw=20;
+    var angle=-Math.PI/2;
+    var paths='';
+    items.forEach(function(item,i){
+      var slice=item.val/total*Math.PI*2;
+      var x1=cx+r*Math.cos(angle);
+      var y1=cy+r*Math.sin(angle);
+      var x2=cx+r*Math.cos(angle+slice);
+      var y2=cy+r*Math.sin(angle+slice);
+      var large=slice>Math.PI?1:0;
+      var color=colors[i%colors.length];
+      paths+='<path d="M '+cx+' '+cy+' L '+x1.toFixed(2)+' '+y1.toFixed(2)+' A '+r+' '+r+' 0 '+large+' 1 '+x2.toFixed(2)+' '+y2.toFixed(2)+' Z" fill="'+color+'" stroke="#fff" stroke-width="1.5"/>';
+      angle+=slice;
+    });
+    // Center hole
+    paths+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r-sw)+'" fill="var(--surface)"/>';
+    svgEl.innerHTML=paths;
+    // Legend
+    legEl.innerHTML=items.map(function(item,i){
+      var pct=(item.val/total*100).toFixed(1);
+      return '<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-2);margin-bottom:3px;"><div style="width:8px;height:8px;border-radius:50%;background:'+colors[i%colors.length]+';flex-shrink:0;"></div>'+item.ticker+' '+pct+'%</div>';
+    }).join('');
+  }
+
+  var TH_COLORS=['#1B5FA8','#1A7A56','#9A6200','#C0392B','#6B4C9A','#2E86AB'];
+  var US_COLORS=['#E84855','#FF6B35','#F7C59F','#2E86AB'];
+
+  var thItems=thaiH.map(function(h){
+    var price=livePrice[h.ticker]||h.avgCost;
+    return {ticker:h.ticker,val:price*h.shares};
+  }).filter(function(x){return x.val>0;});
+
+  var usItems=usH.map(function(h){
+    var price=livePrice[h.ticker]||h.avgCost;
+    return {ticker:h.ticker,val:price*h.shares*usdThb};
+  }).filter(function(x){return x.val>0;});
+
+  drawDonut('donut-th','legend-th',thItems,TH_COLORS);
+  drawDonut('donut-us','legend-us',usItems,US_COLORS);
 
   // Edit list
   const editEl = document.getElementById('port-edit-list');
   if(editEl){
     editEl.innerHTML = holdings.map(function(h,i){
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
-        <div><span style="font-weight:600;">${h.ticker}</span> <span style="color:var(--text-3);">${h.shares} หุ้น @ ${h.market==='US'?'$':'฿'}${h.avgCost}</span></div>
-        <button class="port-edit-btn" onclick="removeHolding(${i})">🗑</button>
-      </div>`;
+      var currency = h.market==='US'?'$':'฿';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;gap:8px;">'
+        +'<div style="flex:1;"><span style="font-weight:600;">'+h.ticker+'</span> <span style="color:var(--text-3);">'+h.shares+' หุ้น @ '+currency+h.avgCost+'</span></div>'
+        +'<div style="display:flex;gap:6px;">'
+        +'<button class="port-edit-btn" style="background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:4px 8px;font-size:12px;" onclick="openPortEdit('+i+')">✏️ แก้</button>'
+        +'<button class="port-edit-btn" style="background:var(--red-bg);color:var(--red);border-radius:6px;padding:4px 8px;font-size:12px;" onclick="removeHolding('+i+')">🗑</button>'
+        +'</div></div>';
     }).join('');
   }
 }
@@ -797,15 +892,50 @@ function renderPortfolio(){
         <span>🔄</span> Refresh ราคา
       </button>
     </div>
-    <div class="port-summary-grid">
-      <div class="port-metric"><div class="port-metric-label">มูลค่ารวม</div><div class="port-metric-val pos" id="port-total-val">—</div></div>
-      <div class="port-metric"><div class="port-metric-label">ต้นทุนรวม</div><div class="port-metric-val" id="port-total-cost">—</div></div>
-      <div class="port-metric"><div class="port-metric-label">กำไร/ขาดทุน</div><div class="port-metric-val" id="port-total-pnl">—</div></div>
+    <!-- Summary row 1: overall -->
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">ภาพรวมทั้งหมด</div>
+      <div class="port-summary-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="port-metric"><div class="port-metric-label">มูลค่ารวม</div><div class="port-metric-val" id="port-total-val">—</div></div>
+        <div class="port-metric"><div class="port-metric-label">ต้นทุนรวม</div><div class="port-metric-val" id="port-total-cost">—</div></div>
+        <div class="port-metric"><div class="port-metric-label">กำไร/ขาดทุน</div><div class="port-metric-val" id="port-total-pnl">—</div></div>
+      </div>
+    </div>
+    <!-- Summary row 2: TH vs US -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div class="card" style="margin-bottom:0;padding:14px;">
+        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🇹🇭 หุ้นไทย</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div><div class="port-metric-label">มูลค่า</div><div class="port-metric-val" id="port-th-val" style="font-size:14px;">—</div></div>
+          <div><div class="port-metric-label">P&L</div><div class="port-metric-val" id="port-th-pnl" style="font-size:14px;">—</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0;padding:14px;">
+        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🇺🇸 หุ้น US</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div><div class="port-metric-label">มูลค่า (฿)</div><div class="port-metric-val" id="port-us-val" style="font-size:14px;">—</div></div>
+          <div><div class="port-metric-label">P&L</div><div class="port-metric-val" id="port-us-pnl" style="font-size:14px;">—</div></div>
+        </div>
+      </div>
     </div>
     <div class="card">
       <div class="port-section-title">Portfolio Allocation</div>
-      <div class="port-alloc-bar" id="port-alloc-bar"></div>
-      <div class="port-alloc-legend" id="port-alloc-legend"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:6px;">🇹🇭 หุ้นไทย</div>
+          <div style="position:relative;width:100%;">
+            <svg id="donut-th" viewBox="0 0 120 120" style="width:100%;max-width:150px;display:block;margin:0 auto;"></svg>
+          </div>
+          <div id="legend-th" style="margin-top:8px;"></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:6px;">🇺🇸 หุ้น US</div>
+          <div style="position:relative;width:100%;">
+            <svg id="donut-us" viewBox="0 0 120 120" style="width:100%;max-width:150px;display:block;margin:0 auto;"></svg>
+          </div>
+          <div id="legend-us" style="margin-top:8px;"></div>
+        </div>
+      </div>
     </div>
     <div class="card">
       <div class="port-section-title">หุ้นไทย (SET)</div>
@@ -845,6 +975,29 @@ function renderPortfolio(){
     <div class="alert info">📌 ราคาหุ้น delay ~15 นาที จาก Yahoo Finance — ไม่เหมาะสำหรับการซื้อขาย ใช้เพื่อติดตาม portfolio เท่านั้นครับ</div>
   </div>
 
+
+
+<!-- PORTFOLIO EDIT MODAL -->
+<div class="lock-popup-overlay" id="port-edit-modal" style="display:none;" onclick="if(event.target===this)closePortEdit()">
+  <div class="lock-popup" style="text-align:left;">
+    <div class="modal-title">✏️ แก้ไขหุ้น</div>
+    <input type="hidden" id="port-edit-idx"/>
+    <div class="modal-field"><label>Ticker</label><input type="text" id="port-edit-ticker" style="text-transform:uppercase;"/></div>
+    <div class="modal-field"><label>ชื่อ</label><input type="text" id="port-edit-name"/></div>
+    <div class="modal-field"><label>จำนวนหุ้น</label><input type="number" id="port-edit-shares" step="0.0001"/></div>
+    <div class="modal-field"><label>Avg Cost</label><input type="number" id="port-edit-avg" step="0.01"/></div>
+    <div class="modal-field"><label>ตลาด</label>
+      <select id="port-edit-market">
+        <option value="TH">🇹🇭 หุ้นไทย (SET)</option>
+        <option value="US">🇺🇸 หุ้น US</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closePortEdit()">ยกเลิก</button>
+      <button class="modal-save" onclick="savePortEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
 
 <!-- PLANNER LOCK POPUP -->
 <div class="lock-popup-overlay" id="planner-lock-popup" style="display:none;">
