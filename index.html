@@ -866,7 +866,7 @@ function setCatBudget(cat,val){
 
 // RENDER TRACKER
 function renderTracker(){
-  const budget=window._budget||17500;
+  const budget=window._budget||parseInt(localStorage.getItem('mek_budget'))||17500;
   const spent=cachedEntries.reduce((s,e)=>s+Number(e.amt),0);
   const remain=budget-spent;
   const pct=Math.min(spent/budget*100,100);
