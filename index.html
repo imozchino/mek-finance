@@ -458,35 +458,47 @@ async function fetchPrices(){
   btn.innerHTML = '<span>⏳</span> กำลังดึงข้อมูล...';
   status.textContent = 'กำลังเชื่อมต่อ...';
 
-  const FINNHUB_KEY = 'd8l4gfpr01qut1f8uoo0d8l4gfpr01qut1f8uoog';
-  const BASE = 'https://finnhub.io/api/v1';
+  const TD_KEY = 'b85d6961eefd4427a7b11982bff5e162';
+  const TD_BASE = 'https://api.twelvedata.com';
 
   try {
-    // Fetch USD/THB
-    const fxRes = await fetch(BASE+'/forex/rates?base=USD&token='+FINNHUB_KEY);
-    if(fxRes.ok){
-      const fxData = await fxRes.json();
-      const thbRate = fxData?.quote?.THB;
-      if(thbRate) usdThb = thbRate;
-    }
-
-    // Fetch each stock price
-    const fetchOne = async function(ticker, market){
-      const symbol = market==='TH' ? ticker+'.BK' : ticker;
-      const r = await fetch(BASE+'/quote?symbol='+symbol+'&token='+FINNHUB_KEY);
-      if(!r.ok) return;
-      const d = await r.json();
-      if(d && d.c && d.c > 0) livePrice[ticker] = d.c;
+    // Build symbols: TH = "KBANK:SET", US = "VOO:NASDAQ" etc
+    const symbolMap = {
+      'BDMS':'BDMS:SET','CPALL':'CPALL:SET','KBANK':'KBANK:SET','SCB':'SCB:SET',
+      'VOO':'VOO:NASDAQ','GOOGL':'GOOGL:NASDAQ','AAPL':'AAPL:NASDAQ'
     };
+    const symbols = holdings.map(function(h){
+      return symbolMap[h.ticker] || (h.market==='TH' ? h.ticker+':SET' : h.ticker+':NASDAQ');
+    }).join(',');
 
-    const promises = holdings.map(h => fetchOne(h.ticker, h.market));
-    await Promise.all(promises);
+    // Fetch all prices in one call
+    const res = await fetch(TD_BASE+'/price?symbol='+encodeURIComponent(symbols)+'&apikey='+TD_KEY);
+    if(!res.ok) throw new Error('fetch failed');
+    const data = await res.json();
+
+    // Parse response - single or multiple symbols
+    holdings.forEach(function(h){
+      const sym = symbolMap[h.ticker] || (h.market==='TH' ? h.ticker+':SET' : h.ticker+':NASDAQ');
+      var price = null;
+      if(data[sym] && data[sym].price) price = parseFloat(data[sym].price);
+      else if(data.price) price = parseFloat(data.price); // single symbol
+      if(price && price > 0) livePrice[h.ticker] = price;
+    });
+
+    // USD/THB
+    try {
+      const fxRes = await fetch('https://open.er-api.com/v6/latest/USD');
+      if(fxRes.ok){
+        const fxData = await fxRes.json();
+        if(fxData.rates && fxData.rates.THB) usdThb = fxData.rates.THB;
+      }
+    } catch(e){}
 
     const now = new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
-    status.textContent = 'อัปเดตล่าสุด ' + now + ' (delay ~15 นาที)';
+    status.textContent = 'อัปเดตล่าสุด '+now+' (delay ~15 นาที)';
     renderPortfolio();
   } catch(e) {
-    status.textContent = 'ดึงข้อมูลไม่ได้ — ใช้ avg cost แทน';
+    status.textContent = 'ดึงข้อมูลไม่ได้ กรุณาลองใหม่';
     renderPortfolio();
   }
 
@@ -505,7 +517,6 @@ function renderPortfolio(){
     if(!tbody) return;
     let html = '';
     list.forEach(function(h){
-      const idx = holdings.indexOf(h);
       const price = livePrice[h.ticker] || null;
       const marketVal = price ? price * h.shares : null;
       const cost = h.avgCost * h.shares;
@@ -517,29 +528,31 @@ function renderPortfolio(){
       if(valTHB) totalVal += valTHB;
       totalCost += costTHB;
 
-      const priceStr = price ? (isUS ? '$'+price.toFixed(2) : '฿'+price.toFixed(2)) : '—';
-      const valStr   = valTHB ? '฿'+Math.round(valTHB).toLocaleString() : '—';
-      const costStr  = isUS ? '$'+cost.toFixed(0) : '฿'+Math.round(cost).toLocaleString();
-      const pnlClass = pnl>0?'pos':'neg';
-      const badgeClass = pnl>0?'pos':'neg';
-      const pnlStr = pnl!==null
-        ? (isUS?'$':' ฿')+(Math.abs(pnl)).toFixed(isUS?0:0).toLocaleString('th-TH')
-        : '—';
+      const valStr  = valTHB ? '฿'+Math.round(valTHB).toLocaleString() : '—';
+      const costStr = isUS ? '$'+Math.round(cost).toLocaleString() : '฿'+Math.round(cost).toLocaleString();
+      const pnlClass = pnl!==null?(pnl>=0?'pos':'neg'):'';
+      const pnlStr = pnl!==null ? (pnl>=0?'+':'-')+' ฿'+Math.round(Math.abs(pnl)).toLocaleString() : '—';
       const pctStr = pnlPct!==null ? (pnlPct>=0?'+':'')+pnlPct.toFixed(1)+'%' : '';
 
-      html += `<tr>
-        <td><div class="port-ticker">${h.ticker}</div><div class="port-name">${h.name} (${h.shares})</div></td>
-        <td><div style="font-family:var(--mono);font-size:12px;">${priceStr}</div><div style="font-size:10px;color:var(--text-3);">avg ${isUS?'$':'฿'}${h.avgCost.toFixed(2)}</div></td>
-        <td style="font-family:var(--mono);font-size:12px;">${costStr}</td>
-        <td style="font-family:var(--mono);font-size:12px;">${valStr}</td>
-        <td>
-          <div class="port-pnl ${pnlClass}">${pnl!==null?(pnl>=0?'+':'-')+pnlStr:'—'}</div>
-          ${pctStr?`<span class="port-badge ${badgeClass}">${pctStr}</span>`:''}
-        </td>
-      </tr>`;
+      var priceCell = '';
+      var currency = isUS ? '$' : '฿';
+      var priceStr = price ? currency+price.toFixed(2) : '—';
+      var avgStr = currency+h.avgCost.toFixed(2);
+      priceCell = '<div style="font-family:var(--mono);font-size:12px;">'+priceStr+'</div>'
+                + '<div style="font-size:10px;color:var(--text-3);">avg '+avgStr+'</div>';
+
+      html += '<tr>'
+        + '<td><div class="port-ticker">'+h.ticker+'</div><div class="port-name">'+h.name+' ('+h.shares+')</div></td>'
+        + '<td>'+priceCell+'</td>'
+        + '<td style="font-family:var(--mono);font-size:12px;">'+costStr+'</td>'
+        + '<td style="font-family:var(--mono);font-size:12px;">'+valStr+'</td>'
+        + '<td><div class="port-pnl '+pnlClass+'">'+pnlStr+'</div>'
+        + (pctStr?'<span class="port-badge '+(pnl>=0?'pos':'neg')+'">'+pctStr+'</span>':'')
+        + '</td></tr>';
     });
     tbody.innerHTML = html;
   }
+
 
   // Reset totals before render
   totalVal=0; totalCost=0;
@@ -937,7 +950,7 @@ function renderPortfolio(){
     <div class="card">
       <div class="port-section-title">หุ้นไทย (SET)</div>
       <table class="port-table">
-        <tr><th>หุ้น</th><th>ราคา</th><th>ต้นทุน</th><th>มูลค่า</th><th>P&L</th></tr>
+        <tr><th>หุ้น</th><th>ราคาปัจจุบัน (฿)</th><th>ต้นทุน</th><th>มูลค่า</th><th>P&L</th></tr>
         <tbody id="port-thai-body"></tbody>
       </table>
     </div>
