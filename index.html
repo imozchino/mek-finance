@@ -521,7 +521,7 @@ function hideSuggest(){
 
     <div class="card" id="chart-card" style="display:none;">
       <div class="card-title">รายจ่ายรายวัน</div>
-      <div class="chart-wrap"><canvas id="daily-chart"></canvas></div>
+      <div id="daily-chart-svg" style="width:100%;overflow-x:auto;"></div>
     </div>
 
     <div class="card" id="week-card" style="display:none;">
@@ -610,7 +610,6 @@ function hideSuggest(){
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 
 // Thai timezone date helper (UTC+7)
@@ -693,7 +692,7 @@ const BIG_BILLS=[
 const CAT_COLORS={อาหาร:'#1A7A56',เครื่องดื่ม:'#6B4C9A',เดินทาง:'#1B5FA8',ช้อปปิ้ง:'#7B3FA8',สังสรรค์:'#9A6200',สุขภาพ:'#C0392B',อื่นๆ:'#6B6B65'};
 const MONTH_NAMES=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const ALL_CATS=Object.keys(CAT_COLORS);
-let cachedEntries=[],allEntries=[],catBudgets={},dailyChart=null;
+let cachedEntries=[],allEntries=[],catBudgets={};
 
 function fmt(n){const abs=Math.abs(Math.round(n));return(n<0?'−':'')+'฿'+abs.toLocaleString('th-TH');}
 
@@ -962,37 +961,35 @@ function renderTracker(){
   const allDays=Array.from({length:daysInMonth},(_,i)=>`2026-${String(month).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
   const chartData=allDays.map(d=>Number(dayMap[d]||0));
   const chartLabels=allDays.map(d=>d.slice(8));
-  const ctx=document.getElementById('daily-chart').getContext('2d');
-  if(dailyChart)dailyChart.destroy();
   const maxVal = Math.max(...chartData.map(Number), 1);
-
-  const niceMax = maxVal <= 500 ? Math.ceil(maxVal/100)*100 : maxVal <= 2000 ? Math.ceil(maxVal/500)*500 : Math.ceil(maxVal/1000)*1000;
-  const suggestedMax = niceMax || 500;
-  function fmtY(v){ if(v===0)return''; if(v>=1000){var k=v/1000; return'฿'+(k===Math.floor(k)?k:k.toFixed(1))+'k';} return'฿'+Math.round(v); }
-  dailyChart=new Chart(ctx,{
-    type:'bar',
-    data:{labels:chartLabels,datasets:[{data:chartData,backgroundColor:chartData.map(function(v){return v===0?'#E0E8F0':'#1B5FA8';}),borderRadius:3,borderSkipped:false}]},
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'฿'+Number(c.raw).toLocaleString();}}}},
-      scales:{
-        x:{ticks:{font:{size:10},maxRotation:0},grid:{display:false}},
-        y:{
-          type:'linear',
-          min:0,
-          suggestedMax:suggestedMax,
-          ticks:{
-            maxTicksLimit:5,
-            stepSize:Math.ceil(suggestedMax/4/100)*100||100,
-            callback:function(value,index,ticks){ return fmtY(value); },
-            font:{size:10}
-          },
-          grid:{color:'#F0F0EC'}
-        }
-      }
-    }
-  });
+  const niceMax = maxVal<=500?Math.ceil(maxVal/100)*100:maxVal<=2000?Math.ceil(maxVal/500)*500:Math.ceil(maxVal/1000)*1000;
+  (function(){
+    var el=document.getElementById('daily-chart-svg');
+    if(!el)return;
+    var W=el.offsetWidth||320,H=140,padL=40,padR=8,padT=10,padB=24;
+    var chartW=W-padL-padR,chartH=H-padT-padB,bars=chartData.length;
+    var bw=Math.max(1,Math.floor(chartW/bars)-1);
+    var gap=Math.floor(chartW/bars)-bw;
+    function fmtAmt(v){if(v>=1000)return'฿'+(v/1000).toFixed(v%1000===0?0:1)+'k';return'฿'+Math.round(v);}
+    var nTicks=4,step=Math.ceil(niceMax/nTicks/100)*100||100;
+    var ticks2=[],t=0;while(t<=niceMax){ticks2.push(t);t+=step;}
+    var s=['<svg width="'+W+'" height="'+H+'" xmlns="http://www.w3.org/2000/svg" style="display:block">'];
+    ticks2.forEach(function(t){
+      var y=padT+chartH-Math.round((t/niceMax)*chartH);
+      s.push('<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#DDE8F5" stroke-width="1"/>');
+      s.push('<text x="'+(padL-4)+'" y="'+(y+4)+'" text-anchor="end" font-size="9" fill="#7A96B0">'+fmtAmt(t)+'</text>');
+    });
+    chartData.forEach(function(v,i){
+      var x=padL+i*(bw+gap);
+      var val=Number(v);
+      var barH=niceMax>0?Math.round((val/niceMax)*chartH):0;
+      var y=padT+chartH-barH;
+      s.push('<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+barH+'" rx="2" fill="'+(val===0?'#E0E8F0':'#1B5FA8')+'"/>');
+      if(i%2===0)s.push('<text x="'+(x+bw/2)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="#7A96B0">'+chartLabels[i]+'</text>');
+    });
+    s.push('</svg>');
+    el.innerHTML=s.join('');
+  })();
   document.getElementById('chart-card').style.display='block';
 
   // Week summary
