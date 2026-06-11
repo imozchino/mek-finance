@@ -458,37 +458,35 @@ async function fetchPrices(){
   btn.innerHTML = '<span>⏳</span> กำลังดึงข้อมูล...';
   status.textContent = 'กำลังเชื่อมต่อ...';
 
-  const PROXY = 'https://corsproxy.io/?';
-  function proxyUrl(url){ return PROXY + encodeURIComponent(url); }
+  const FINNHUB_KEY = 'd8l4gfpr01qut1f8uoo0d8l4gfpr01qut1f8uoog';
+  const BASE = 'https://finnhub.io/api/v1';
 
   try {
-    // Build all tickers
-    const thaiTickers = holdings.filter(h=>h.market==='TH').map(h=>h.ticker+'.BK');
-    const usTickers   = holdings.filter(h=>h.market==='US').map(h=>h.ticker);
-    const allSymbols  = [...thaiTickers, ...usTickers, 'USDTHB=X'].join(',');
+    // Fetch USD/THB
+    const fxRes = await fetch(BASE+'/forex/rates?base=USD&token='+FINNHUB_KEY);
+    if(fxRes.ok){
+      const fxData = await fxRes.json();
+      const thbRate = fxData?.quote?.THB;
+      if(thbRate) usdThb = thbRate;
+    }
 
-    // Fetch via proxy
-    const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/spark?symbols='+allSymbols+'&range=1d&interval=1d';
-    const res = await fetch(proxyUrl(yahooUrl));
-    if(!res.ok) throw new Error('proxy failed');
-    const data = await res.json();
-    const spark = data?.spark?.result || [];
+    // Fetch each stock price
+    const fetchOne = async function(ticker, market){
+      const symbol = market==='TH' ? ticker+'.BK' : ticker;
+      const r = await fetch(BASE+'/quote?symbol='+symbol+'&token='+FINNHUB_KEY);
+      if(!r.ok) return;
+      const d = await r.json();
+      if(d && d.c && d.c > 0) livePrice[ticker] = d.c;
+    };
 
-    spark.forEach(function(item){
-      if(!item || !item.symbol) return;
-      const price = item.response?.[0]?.meta?.regularMarketPrice;
-      if(price){
-        const sym = item.symbol.replace('.BK','');
-        livePrice[sym] = price;
-        if(sym === 'USDTHB=X') usdThb = price;
-      }
-    });
+    const promises = holdings.map(h => fetchOne(h.ticker, h.market));
+    await Promise.all(promises);
 
     const now = new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
     status.textContent = 'อัปเดตล่าสุด ' + now + ' (delay ~15 นาที)';
     renderPortfolio();
   } catch(e) {
-    status.textContent = 'ดึงข้อมูลไม่ได้ — ใช้ราคาที่บันทึกไว้';
+    status.textContent = 'ดึงข้อมูลไม่ได้ — ใช้ avg cost แทน';
     renderPortfolio();
   }
 
