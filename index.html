@@ -456,34 +456,23 @@ async function fetchPrices(){
   const status = document.getElementById('port-status');
   btn.classList.add('loading');
   btn.innerHTML = '<span>⏳</span> กำลังดึงข้อมูล...';
-  status.textContent = 'กำลังเชื่อมต่อ...';
+  status.textContent = 'กำลังเชื่อมต่อ Finnhub...';
 
-  const TD_KEY = 'b85d6961eefd4427a7b11982bff5e162';
-  const TD_BASE = 'https://api.twelvedata.com';
+  const FINNHUB_KEY = 'd8l4gfpr01qut1f8uoo0d8l4gfpr01qut1f8uoog';
+  const BASE = 'https://finnhub.io/api/v1';
 
   try {
-    // Build symbols: TH = "KBANK:SET", US = "VOO:NASDAQ" etc
-    const symbolMap = {
-      'BDMS':'BDMS:SET','CPALL':'CPALL:SET','KBANK':'KBANK:SET','SCB':'SCB:SET',
-      'VOO':'VOO:NASDAQ','GOOGL':'GOOGL:NASDAQ','AAPL':'AAPL:NASDAQ'
+    // Fetch all holdings - TH uses .BK suffix, US uses ticker directly
+    const fetchOne = async function(h){
+      try {
+        const symbol = h.market==='TH' ? h.ticker+'.BK' : h.ticker;
+        const r = await fetch(BASE+'/quote?symbol='+symbol+'&token='+FINNHUB_KEY);
+        if(!r.ok) return;
+        const d = await r.json();
+        if(d && d.c && d.c > 0) livePrice[h.ticker] = d.c;
+      } catch(e){}
     };
-    const symbols = holdings.map(function(h){
-      return symbolMap[h.ticker] || (h.market==='TH' ? h.ticker+':SET' : h.ticker+':NASDAQ');
-    }).join(',');
-
-    // Fetch all prices in one call
-    const res = await fetch(TD_BASE+'/price?symbol='+encodeURIComponent(symbols)+'&apikey='+TD_KEY);
-    if(!res.ok) throw new Error('fetch failed');
-    const data = await res.json();
-
-    // Parse response - single or multiple symbols
-    holdings.forEach(function(h){
-      const sym = symbolMap[h.ticker] || (h.market==='TH' ? h.ticker+':SET' : h.ticker+':NASDAQ');
-      var price = null;
-      if(data[sym] && data[sym].price) price = parseFloat(data[sym].price);
-      else if(data.price) price = parseFloat(data.price); // single symbol
-      if(price && price > 0) livePrice[h.ticker] = price;
-    });
+    await Promise.all(holdings.map(h=>fetchOne(h)));
 
     // USD/THB
     try {
@@ -494,7 +483,12 @@ async function fetchPrices(){
       }
     } catch(e){}
 
+    // Cache
+    const nowFull = new Date().toLocaleString('th-TH',{timeZone:'Asia/Bangkok'});
     const now = new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
+    localStorage.setItem('mek_prices', JSON.stringify(livePrice));
+    localStorage.setItem('mek_usdthb', usdThb);
+    localStorage.setItem('mek_price_time', nowFull);
     status.textContent = 'อัปเดตล่าสุด '+now+' (delay ~15 นาที)';
     renderPortfolio();
   } catch(e) {
@@ -504,6 +498,35 @@ async function fetchPrices(){
 
   btn.classList.remove('loading');
   btn.innerHTML = '<span>🔄</span> Refresh ราคา';
+}
+
+function setManualPrice(ticker, val){
+  var v = parseFloat(val);
+  if(v > 0){
+    livePrice[ticker] = v;
+    // save to cache
+    localStorage.setItem('mek_prices', JSON.stringify(livePrice));
+    const nowFull = new Date().toLocaleString('th-TH',{timeZone:'Asia/Bangkok'});
+    localStorage.setItem('mek_price_time', nowFull);
+    renderPortfolio();
+  }
+}
+
+function loadCachedPrices(){
+  try {
+    const cached = localStorage.getItem('mek_prices');
+    const cachedFx = localStorage.getItem('mek_usdthb');
+    const cachedTime = localStorage.getItem('mek_price_time');
+    if(cached){
+      const parsed = JSON.parse(cached);
+      Object.keys(parsed).forEach(function(k){ if(!livePrice[k]) livePrice[k]=parsed[k]; });
+    }
+    if(cachedFx) usdThb = parseFloat(cachedFx);
+    if(cachedTime){
+      const status = document.getElementById('port-status');
+      if(status) status.textContent = 'ราคาล่าสุด: '+cachedTime+' (กด Refresh เพื่ออัปเดต)';
+    }
+  } catch(e){}
 }
 
 function renderPortfolio(){
@@ -537,9 +560,8 @@ function renderPortfolio(){
       var priceCell = '';
       var currency = isUS ? '$' : '฿';
       var priceStr = price ? currency+price.toFixed(2) : '—';
-      var avgStr = currency+h.avgCost.toFixed(2);
       priceCell = '<div style="font-family:var(--mono);font-size:12px;">'+priceStr+'</div>'
-                + '<div style="font-size:10px;color:var(--text-3);">avg '+avgStr+'</div>';
+                + '<div style="font-size:10px;color:var(--text-3);">avg '+currency+h.avgCost.toFixed(2)+'</div>';
 
       html += '<tr>'
         + '<td><div class="port-ticker">'+h.ticker+'</div><div class="port-name">'+h.name+' ('+h.shares+')</div></td>'
@@ -950,7 +972,7 @@ function renderPortfolio(){
     <div class="card">
       <div class="port-section-title">หุ้นไทย (SET)</div>
       <table class="port-table">
-        <tr><th>หุ้น</th><th>ราคาปัจจุบัน (฿)</th><th>ต้นทุน</th><th>มูลค่า</th><th>P&L</th></tr>
+        <tr><th>หุ้น</th><th>ราคา</th><th>ต้นทุน</th><th>มูลค่า</th><th>P&L</th></tr>
         <tbody id="port-thai-body"></tbody>
       </table>
     </div>
@@ -1475,7 +1497,7 @@ function switchTab(name,btn){
   if(name==='tracker')loadEntries();
   if(name==='settings')renderCatBudgetSettings();
   if(name==='planner')initPlannerLock();
-  if(name==='portfolio')renderPortfolio();
+  if(name==='portfolio'){loadCachedPrices();renderPortfolio();}
 }
 
 // INIT
