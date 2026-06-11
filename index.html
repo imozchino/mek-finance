@@ -955,16 +955,16 @@ function renderTracker(){
 
   // Daily chart
   const dayMap={};
-  cachedEntries.forEach(e=>{dayMap[e.entry_date]=(dayMap[e.entry_date]||0)+Number(e.amt);});
+  cachedEntries.forEach(e=>{dayMap[e.entry_date]=Number(dayMap[e.entry_date]||0)+Number(e.amt);});
   const sortedDays=Object.keys(dayMap).sort();
   const month=viewMonth;
   const daysInMonth=new Date(2026,month,0).getDate();
   const allDays=Array.from({length:daysInMonth},(_,i)=>`2026-${String(month).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
-  const chartData=allDays.map(d=>dayMap[d]||0);
+  const chartData=allDays.map(d=>Number(dayMap[d]||0));
   const chartLabels=allDays.map(d=>d.slice(8));
   const ctx=document.getElementById('daily-chart').getContext('2d');
   if(dailyChart)dailyChart.destroy();
-  const maxVal = Math.max(...chartData, 1);
+  const maxVal = Math.max(...chartData.map(Number), 1);
   const niceMax = maxVal <= 500 ? Math.ceil(maxVal/100)*100 : maxVal <= 2000 ? Math.ceil(maxVal/500)*500 : Math.ceil(maxVal/1000)*1000;
   dailyChart=new Chart(ctx,{type:'bar',data:{labels:chartLabels,datasets:[{data:chartData,backgroundColor:chartData.map(v=>v===0?'#E0E8F0':'#1B5FA8'),borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`฿${c.raw.toLocaleString()}`}}},scales:{x:{ticks:{font:{size:10},maxRotation:0},grid:{display:false}},y:{min:0,max:niceMax||500,ticks:{maxTicksLimit:5,callback:function(v){if(v===0)return'';if(v>=1000){var k=v/1000;return'฿'+(Number.isInteger(k)?k:k.toFixed(1))+'k';}return'฿'+Math.round(v);},font:{size:10}},grid:{color:'#F0F0EC'}}}}});
   document.getElementById('chart-card').style.display='block';
