@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="Finance"/>
@@ -234,6 +233,47 @@ body.dark{--bg:#0F1923;--surface:#1A2535;--border:#2A3A50;--border-light:#1F2E42
   .day-filter-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
   .day-filter-row label{font-size:12px;color:var(--text-3);}
   .day-filter-select{font-family:var(--sans);font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
+
+  /* Portfolio */
+  .port-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+  .port-metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+  .port-metric-label{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+  .port-metric-val{font-family:var(--mono);font-size:16px;font-weight:500;}
+  .port-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .port-table th{font-size:11px;font-weight:500;color:var(--text-3);text-align:left;padding:0 6px 8px;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+  .port-table th:last-child,.port-table td:last-child{text-align:right;}
+  .port-table td{padding:10px 6px;border-bottom:1px solid var(--border-light);vertical-align:middle;}
+  .port-table tr:last-child td{border-bottom:none;}
+  .port-ticker{font-weight:600;font-size:13px;}
+  .port-name{font-size:11px;color:var(--text-3);margin-top:2px;}
+  .port-pnl{font-family:var(--mono);font-size:12px;font-weight:500;}
+  .port-badge{font-size:10px;padding:2px 6px;border-radius:6px;font-weight:500;}
+  .port-badge.pos{background:var(--green-bg);color:var(--green);}
+  .port-badge.neg{background:var(--red-bg);color:var(--red);}
+  .port-refresh-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .port-refresh-btn{font-family:var(--sans);font-size:12px;padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:var(--blue);color:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .port-refresh-btn:hover{opacity:.88;}
+  .port-refresh-btn.loading{opacity:.6;cursor:not-allowed;}
+  .port-status{font-size:11px;color:var(--text-3);}
+  .port-edit-btn{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:13px;padding:2px 4px;}
+  .port-edit-btn:hover{color:var(--blue);}
+  .port-section-title{font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px;}
+  .port-alloc-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:12px;}
+  .port-alloc-seg{height:100%;transition:width .4s;}
+  .port-alloc-legend{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .port-alloc-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);}
+  .port-alloc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .port-input-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .port-input-label{font-size:11px;color:var(--text-3);margin-bottom:3px;}
+  .port-input{width:100%;font-family:var(--sans);font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
+  .port-input:focus{border-color:var(--blue);}
+  .port-add-row{display:grid;grid-template-columns:80px 1fr 100px 100px auto;gap:8px;margin-bottom:8px;align-items:center;}
+  @media(max-width:600px){
+    .port-summary-grid{grid-template-columns:1fr 1fr;}
+    .port-add-row{grid-template-columns:1fr 1fr;row-gap:6px;}
+    .port-add-row .add-btn{grid-column:1/-1;}
+    .port-table th:nth-child(3),.port-table td:nth-child(3){display:none;}
+  }
 </style>
 
 <script>
@@ -338,6 +378,186 @@ function hideSuggest(){
   suggestIdx=-1;
 }
 
+
+// ── PORTFOLIO ──
+const DEFAULT_HOLDINGS = [
+  {ticker:'BDMS',   name:'Bangkok Dusit Medical', shares:2000,   avgCost:24.49,  market:'TH'},
+  {ticker:'CPALL',  name:'CP All',                shares:1100,   avgCost:60.85,  market:'TH'},
+  {ticker:'KBANK',  name:'ธนาคารกสิกรไทย',        shares:800,    avgCost:128.93, market:'TH'},
+  {ticker:'SCB',    name:'ธนาคารไทยพาณิชย์',       shares:137,    avgCost:128.72, market:'TH'},
+  {ticker:'VOO',    name:'Vanguard S&P 500 ETF',  shares:6.2616, avgCost:576.29, market:'US'},
+  {ticker:'GOOGL',  name:'Alphabet',              shares:1.1097, avgCost:317.80, market:'US'},
+  {ticker:'AAPL',   name:'Apple',                 shares:1.2092, avgCost:263.28, market:'US'},
+];
+
+const PORT_COLORS = ['#1B5FA8','#1A7A56','#9A6200','#C0392B','#6B4C9A','#2E86AB','#E84855'];
+
+let holdings = JSON.parse(localStorage.getItem('mek_holdings') || 'null') || DEFAULT_HOLDINGS;
+let livePrice = {}; // {ticker: price}
+let usdThb = 35.5;
+
+function saveHoldings(){ localStorage.setItem('mek_holdings', JSON.stringify(holdings)); }
+
+function addHolding(){
+  const ticker = document.getElementById('new-ticker').value.trim().toUpperCase();
+  const name   = document.getElementById('new-name').value.trim();
+  const shares = parseFloat(document.getElementById('new-shares').value);
+  const avg    = parseFloat(document.getElementById('new-avg').value);
+  const market = document.getElementById('new-market').value;
+  if(!ticker||!shares||!avg){alert('กรุณากรอกข้อมูลให้ครบครับ');return;}
+  holdings.push({ticker,name:name||ticker,shares,avgCost:avg,market});
+  saveHoldings();
+  document.getElementById('new-ticker').value='';
+  document.getElementById('new-name').value='';
+  document.getElementById('new-shares').value='';
+  document.getElementById('new-avg').value='';
+  renderPortfolio();
+}
+
+function removeHolding(i){
+  if(!confirm('ลบ '+holdings[i].ticker+'?'))return;
+  holdings.splice(i,1);
+  saveHoldings();
+  renderPortfolio();
+}
+
+async function fetchPrices(){
+  const btn = document.getElementById('port-refresh-btn');
+  const status = document.getElementById('port-status');
+  btn.classList.add('loading');
+  btn.innerHTML = '<span>⏳</span> กำลังดึงข้อมูล...';
+  status.textContent = 'กำลังเชื่อมต่อ...';
+
+  try {
+    // Fetch USD/THB rate
+    const fxRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDTHB=X?interval=1d&range=1d');
+    if(fxRes.ok){
+      const fxData = await fxRes.json();
+      const rate = fxData?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if(rate) usdThb = rate;
+    }
+
+    // Build tickers list
+    const thaiTickers = holdings.filter(h=>h.market==='TH').map(h=>h.ticker+'.BK');
+    const usTickers   = holdings.filter(h=>h.market==='US').map(h=>h.ticker);
+    const allTickers  = [...thaiTickers, ...usTickers, 'USDTHB=X'];
+    const symbolStr   = allTickers.join(',');
+
+    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/spark?symbols=${symbolStr}&range=1d&interval=1d`);
+    if(!res.ok) throw new Error('fetch failed');
+    const data = await res.json();
+    const spark = data?.spark?.result || [];
+
+    spark.forEach(function(item){
+      if(!item || !item.symbol) return;
+      const price = item.response?.[0]?.meta?.regularMarketPrice;
+      if(price){
+        const sym = item.symbol.replace('.BK','');
+        livePrice[sym] = price;
+      }
+    });
+
+    const now = new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
+    status.textContent = 'อัปเดตล่าสุด ' + now + ' (delay ~15 นาที)';
+    renderPortfolio();
+  } catch(e) {
+    status.textContent = 'ดึงข้อมูลไม่ได้ — ใช้ราคาที่บันทึกไว้';
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '<span>🔄</span> Refresh ราคา';
+}
+
+function renderPortfolio(){
+  const thaiH = holdings.filter(h=>h.market==='TH');
+  const usH   = holdings.filter(h=>h.market==='US');
+
+  let totalVal=0, totalCost=0;
+
+  function renderRows(list, bodyId, isUS){
+    const tbody = document.getElementById(bodyId);
+    if(!tbody) return;
+    let html = '';
+    list.forEach(function(h){
+      const idx = holdings.indexOf(h);
+      const price = livePrice[h.ticker] || null;
+      const marketVal = price ? price * h.shares : null;
+      const cost = h.avgCost * h.shares;
+      const pnl  = marketVal !== null ? marketVal - cost : null;
+      const pnlPct = pnl !== null ? (pnl/cost*100) : null;
+      const valTHB = isUS && marketVal ? marketVal * usdThb : marketVal;
+      const costTHB = isUS ? cost * usdThb : cost;
+
+      if(valTHB) totalVal += valTHB;
+      totalCost += costTHB;
+
+      const priceStr = price ? (isUS ? '$'+price.toFixed(2) : '฿'+price.toFixed(2)) : '—';
+      const valStr   = valTHB ? '฿'+Math.round(valTHB).toLocaleString() : '—';
+      const costStr  = isUS ? '$'+cost.toFixed(0) : '฿'+Math.round(cost).toLocaleString();
+      const pnlClass = pnl>0?'pos':'neg';
+      const badgeClass = pnl>0?'pos':'neg';
+      const pnlStr = pnl!==null
+        ? (isUS?'$':' ฿')+(Math.abs(pnl)).toFixed(isUS?0:0).toLocaleString('th-TH')
+        : '—';
+      const pctStr = pnlPct!==null ? (pnlPct>=0?'+':'')+pnlPct.toFixed(1)+'%' : '';
+
+      html += `<tr>
+        <td><div class="port-ticker">${h.ticker}</div><div class="port-name">${h.name} (${h.shares})</div></td>
+        <td><div style="font-family:var(--mono);font-size:12px;">${priceStr}</div><div style="font-size:10px;color:var(--text-3);">avg ${isUS?'$':'฿'}${h.avgCost.toFixed(2)}</div></td>
+        <td style="font-family:var(--mono);font-size:12px;">${costStr}</td>
+        <td style="font-family:var(--mono);font-size:12px;">${valStr}</td>
+        <td>
+          <div class="port-pnl ${pnlClass}">${pnl!==null?(pnl>=0?'+':'-')+pnlStr:'—'}</div>
+          ${pctStr?`<span class="port-badge ${badgeClass}">${pctStr}</span>`:''}
+        </td>
+      </tr>`;
+    });
+    tbody.innerHTML = html;
+  }
+
+  // Reset totals before render
+  totalVal=0; totalCost=0;
+  renderRows(thaiH, 'port-thai-body', false);
+  renderRows(usH,   'port-us-body',   true);
+
+  // Summary
+  const totalPnl = totalVal - totalCost;
+  const totalPct = totalCost>0 ? (totalPnl/totalCost*100) : 0;
+  document.getElementById('port-total-val').textContent  = totalVal>0?'฿'+Math.round(totalVal).toLocaleString():'—';
+  document.getElementById('port-total-cost').textContent = totalCost>0?'฿'+Math.round(totalCost).toLocaleString():'—';
+  const pnlEl = document.getElementById('port-total-pnl');
+  pnlEl.textContent = totalVal>0?(totalPnl>=0?'+':'')+' ฿'+Math.round(Math.abs(totalPnl)).toLocaleString()+' ('+totalPct.toFixed(1)+'%)':'—';
+  pnlEl.className = 'port-metric-val '+(totalPnl>=0?'pos':'neg');
+  document.getElementById('port-fx-rate').textContent = 'USD/THB: '+usdThb.toFixed(2);
+
+  // Allocation bar
+  const segments = holdings.map(function(h,i){
+    const price = livePrice[h.ticker] || h.avgCost;
+    const val = h.market==='US' ? price*h.shares*usdThb : price*h.shares;
+    return {ticker:h.ticker, val:val, color:PORT_COLORS[i%PORT_COLORS.length]};
+  }).filter(s=>s.val>0);
+  const totalSeg = segments.reduce((s,x)=>s+x.val,0);
+  const barEl = document.getElementById('port-alloc-bar');
+  const legEl = document.getElementById('port-alloc-legend');
+  if(barEl && totalSeg>0){
+    barEl.innerHTML = segments.map(s=>`<div class="port-alloc-seg" style="width:${(s.val/totalSeg*100).toFixed(1)}%;background:${s.color};"></div>`).join('');
+    legEl.innerHTML = segments.map(s=>`<div class="port-alloc-item"><div class="port-alloc-dot" style="background:${s.color};"></div>${s.ticker} ${(s.val/totalSeg*100).toFixed(1)}%</div>`).join('');
+  }
+
+  // Edit list
+  const editEl = document.getElementById('port-edit-list');
+  if(editEl){
+    editEl.innerHTML = holdings.map(function(h,i){
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
+        <div><span style="font-weight:600;">${h.ticker}</span> <span style="color:var(--text-3);">${h.shares} หุ้น @ ${h.market==='US'?'$':'฿'}${h.avgCost}</span></div>
+        <button class="port-edit-btn" onclick="removeHolding(${i})">🗑</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+// Switch tab handler update — add portfolio
+
 </script>
 </head>
 <body>
@@ -355,6 +575,7 @@ function hideSuggest(){
     <button class="tab-btn" onclick="switchTab('planner',this)">📊 Planner</button>
     <button class="tab-btn active" onclick="switchTab('tracker',this)">📝 Tracker</button>
     <button class="tab-btn" onclick="switchTab('settings',this)">⚙️ Settings</button>
+    <button class="tab-btn" onclick="switchTab('portfolio',this)">📈 Portfolio</button>
   </div>
 
   <!-- PLANNER -->
@@ -741,6 +962,7 @@ function update(){
   else if(diff>-30000){amtEl.className='result-amount ok';pillEl.className='pill ok';pillTxt.textContent='ใกล้เป้า';alertEl.className='alert warn';alertEl.textContent=`⚠️ ปลาย ธ.ค. คาดว่าจะเหลือ ${fmt(yearEnd)} — ต่ำกว่าเป้า ${fmt(Math.abs(diff))}`;pfill.style.background='#9A6200';}
   else{amtEl.className='result-amount tight';pillEl.className='pill tight';pillTxt.textContent='ไม่ถึงเป้า';alertEl.className='alert bad';alertEl.textContent=`🚨 ปลาย ธ.ค. คาดว่าจะเหลือแค่ ${fmt(yearEnd)} — ต่ำกว่าเป้ามาก`;pfill.style.background='#C0392B';}
   window._budget=living;
+  localStorage.setItem('mek_budget', living);
   renderCatBudgetSettings();
 }
 
@@ -1034,6 +1256,7 @@ function switchTab(name,btn){
   if(name==='tracker')loadEntries();
   if(name==='settings')renderCatBudgetSettings();
   if(name==='planner')initPlannerLock();
+  if(name==='portfolio')renderPortfolio();
 }
 
 // INIT
@@ -1046,6 +1269,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   const saved=localStorage.getItem('catBudgets');
   if(saved)try{catBudgets=JSON.parse(saved);}catch(e){}
   if(localStorage.getItem('darkMode')==='1'){document.getElementById('dark-toggle').checked=true;toggleDark();}
+  const savedBudget=parseInt(localStorage.getItem('mek_budget'));
+  if(savedBudget)window._budget=savedBudget;
   loadEntries();
   // PWA install hint
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._pwaPrompt=e;});
