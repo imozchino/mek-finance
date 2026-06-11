@@ -455,44 +455,22 @@ async function fetchPrices(){
   const btn = document.getElementById('port-refresh-btn');
   const status = document.getElementById('port-status');
   btn.classList.add('loading');
-  btn.innerHTML = '<span>⏳</span> กำลังดึงข้อมูล...';
-  status.textContent = 'กำลังเชื่อมต่อ Finnhub...';
-
-  const FINNHUB_KEY = 'd8l4gfpr01qut1f8uoo0d8l4gfpr01qut1f8uoog';
-  const BASE = 'https://finnhub.io/api/v1';
+   btn.innerHTML = '<span>⏳</span> กำลังดึงข้อมูล...';
+   status.textContent = 'กำลังเชื่อมต่อ...';
 
   try {
-    // Fetch all holdings - TH uses .BK suffix, US uses ticker directly
-    // US via Finnhub
-    const fetchUS = async function(h){
-      try {
-        const r = await fetch(BASE+'/quote?symbol='+h.ticker+'&token='+FINNHUB_KEY);
-        if(!r.ok) return;
-        const d = await r.json();
-        if(d && d.c && d.c > 0) livePrice[h.ticker] = d.c;
-      } catch(e){}
-    };
+    // All stocks via Supabase Edge Function (Yahoo Finance server-side)
+    const thSymbols = holdings.filter(h=>h.market==='TH').map(h=>h.ticker+'.BK');
+    const usSymbols = holdings.filter(h=>h.market==='US').map(h=>h.ticker);
+    const allSymbols = [...thSymbols, ...usSymbols].join(',');
+    const url = 'https://ahelypphgebpszhvmfrc.supabase.co/functions/v1/stock-price?symbols='+encodeURIComponent(allSymbols);
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('Edge function failed');
+    const d = await r.json();
+    Object.keys(d).forEach(function(ticker){
+      if(d[ticker] > 0) livePrice[ticker] = d[ticker];
+    });
 
-    // TH via Alpha Vantage
-    const AV_KEY = '8L2AP0RWNQMVZSA9';
-    const fetchTH = async function(h){
-      try {
-        const symbol = h.ticker+'.BK';
-        const url = 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol='+symbol+'&apikey='+AV_KEY;
-        const r = await fetch(url);
-        if(!r.ok) return;
-        const d = await r.json();
-        const price = parseFloat(d?.['Global Quote']?.['05. price']);
-        if(price && price > 0) livePrice[h.ticker] = price;
-      } catch(e){}
-    };
-
-    const usHoldings = holdings.filter(h=>h.market==='US');
-    const thHoldings = holdings.filter(h=>h.market==='TH');
-    await Promise.all([
-      ...usHoldings.map(h=>fetchUS(h)),
-      ...thHoldings.map(h=>fetchTH(h))
-    ]);
 
     // USD/THB
     try {
@@ -583,13 +561,23 @@ function renderPortfolio(){
       priceCell = '<div style="font-family:var(--mono);font-size:12px;">'+priceStr+'</div>'
                 + '<div style="font-size:10px;color:var(--text-3);">avg '+currency+h.avgCost.toFixed(2)+'</div>';
 
+      // P&L: TH in THB, US in USD
+      var pnlDisplay = '—';
+      if(pnl !== null){
+        if(isUS){
+          var pnlUSD = price ? (price - h.avgCost)*h.shares : null;
+          pnlDisplay = pnlUSD!==null ? (pnlUSD>=0?'+':'-')+' $'+Math.abs(pnlUSD).toFixed(2) : '—';
+        } else {
+          pnlDisplay = (pnl>=0?'+':'-')+' ฿'+Math.round(Math.abs(pnl)).toLocaleString();
+        }
+      }
       html += '<tr>'
         + '<td><div class="port-ticker">'+h.ticker+'</div><div class="port-name">'+h.name+' ('+h.shares+')</div></td>'
         + '<td>'+priceCell+'</td>'
         + '<td style="font-family:var(--mono);font-size:12px;">'+costStr+'</td>'
         + '<td style="font-family:var(--mono);font-size:12px;">'+valStr+'</td>'
-        + '<td><div class="port-pnl '+pnlClass+'">'+pnlStr+'</div>'
-        + (pctStr?'<span class="port-badge '+(pnl>=0?'pos':'neg')+'">'+pctStr+'</span>':'')
+        + '<td><div class="port-pnl '+pnlClass+'">'+pnlDisplay+'</div>'
+        + (pctStr?'<span class="port-badge '+(pnl!==null&&pnl>=0?'pos':'neg')+'">'+pctStr+'</span>':'')
         + '</td></tr>';
     });
     tbody.innerHTML = html;
@@ -615,29 +603,36 @@ function renderPortfolio(){
   var totalPnl=totalVal-totalCost;
   var totalPct=totalCost>0?(totalPnl/totalCost*100):0;
 
-  function fmtPnl(pnl,cost){
-    var pct=cost>0?(pnl/cost*100):0;
-    return (pnl>=0?'+':'')+' ฿'+Math.round(Math.abs(pnl)).toLocaleString()+' ('+pct.toFixed(1)+'%)';
+  function setEl(id, text, cls){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.textContent=text;
+    if(cls) el.className='port-metric-val '+cls;
   }
+  function pnlCls(v){ return v>=0?'pos':'neg'; }
+  function fmtBaht(v){ return (v>=0?'+':'')+' ฿'+Math.round(Math.abs(v)).toLocaleString(); }
+  function fmtPct(v,cost){ var p=cost>0?(v/cost*100):0; return (p>=0?'+':'')+p.toFixed(1)+'%'; }
 
-  // Overall summary
-  document.getElementById('port-total-val').textContent = '฿'+Math.round(totalVal).toLocaleString();
-  document.getElementById('port-total-val').className = 'port-metric-val';
-  document.getElementById('port-total-cost').textContent = '฿'+Math.round(totalCost).toLocaleString();
-  var pnlEl=document.getElementById('port-total-pnl');
-  pnlEl.textContent=fmtPnl(totalPnl,totalCost);
-  pnlEl.className='port-metric-val '+(totalPnl>=0?'pos':'neg');
+  // Overall
+  setEl('port-total-cost','฿'+Math.round(totalCost).toLocaleString());
+  setEl('port-total-val','฿'+Math.round(totalVal).toLocaleString());
+  setEl('port-total-pnl', fmtBaht(totalPnl)+' ('+fmtPct(totalPnl,totalCost)+')', pnlCls(totalPnl));
 
-  // TH/US summary
-  var thPnl=thVal-thCost, usPnl=usVal-usCost;
-  var thValEl=document.getElementById('port-th-val');
-  var thPnlEl=document.getElementById('port-th-pnl');
-  var usValEl=document.getElementById('port-us-val');
-  var usPnlEl=document.getElementById('port-us-pnl');
-  if(thValEl){thValEl.textContent='฿'+Math.round(thVal).toLocaleString();thValEl.className='port-metric-val';}
-  if(thPnlEl){thPnlEl.textContent=(thPnl>=0?'+':'')+' ฿'+Math.round(Math.abs(thPnl)).toLocaleString();thPnlEl.className='port-metric-val '+(thPnl>=0?'pos':'neg');}
-  if(usValEl){usValEl.textContent='฿'+Math.round(usVal).toLocaleString();usValEl.className='port-metric-val';}
-  if(usPnlEl){usPnlEl.textContent=(usPnl>=0?'+':'')+' ฿'+Math.round(Math.abs(usPnl)).toLocaleString();usPnlEl.className='port-metric-val '+(usPnl>=0?'pos':'neg');}
+  // TH
+  var thPnl=thVal-thCost;
+  setEl('port-th-cost','฿'+Math.round(thCost).toLocaleString());
+  setEl('port-th-val','฿'+Math.round(thVal).toLocaleString());
+  setEl('port-th-pnl',fmtBaht(thPnl),pnlCls(thPnl));
+  var thPctEl=document.getElementById('port-th-pct');
+  if(thPctEl){thPctEl.textContent=fmtPct(thPnl,thCost);thPctEl.style.color=thPnl>=0?'var(--green)':'var(--red)';}
+
+  // US (show THB value but note USD/THB)
+  var usPnl=usVal-usCost;
+  setEl('port-us-cost','฿'+Math.round(usCost).toLocaleString()+' ($'+Math.round(usCost/usdThb).toLocaleString()+')');
+  setEl('port-us-val','฿'+Math.round(usVal).toLocaleString()+' ($'+Math.round(usVal/usdThb).toLocaleString()+')');
+  setEl('port-us-pnl',fmtBaht(usPnl),pnlCls(usPnl));
+  var usPctEl=document.getElementById('port-us-pct');
+  if(usPctEl){usPctEl.textContent=fmtPct(usPnl,usCost);usPctEl.style.color=usPnl>=0?'var(--green)':'var(--red)';}
 
   document.getElementById('port-fx-rate').textContent='USD/THB: '+usdThb.toFixed(2);
 
@@ -944,29 +939,37 @@ function renderPortfolio(){
         <span>🔄</span> Refresh ราคา
       </button>
     </div>
-    <!-- Summary row 1: overall -->
-    <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">ภาพรวมทั้งหมด</div>
-      <div class="port-summary-grid" style="grid-template-columns:repeat(3,1fr);">
-        <div class="port-metric"><div class="port-metric-label">มูลค่ารวม</div><div class="port-metric-val" id="port-total-val">—</div></div>
-        <div class="port-metric"><div class="port-metric-label">ต้นทุนรวม</div><div class="port-metric-val" id="port-total-cost">—</div></div>
-        <div class="port-metric"><div class="port-metric-label">กำไร/ขาดทุน</div><div class="port-metric-val" id="port-total-pnl">—</div></div>
+    <!-- Overall summary -->
+    <div class="card" style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">ภาพรวมทั้งหมด (THB)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div><div class="port-metric-label">ต้นทุนรวม</div><div class="port-metric-val" id="port-total-cost" style="font-size:15px;">—</div></div>
+        <div><div class="port-metric-label">มูลค่าปัจจุบัน</div><div class="port-metric-val" id="port-total-val" style="font-size:15px;">—</div></div>
+        <div><div class="port-metric-label">กำไร/ขาดทุน</div><div class="port-metric-val" id="port-total-pnl" style="font-size:15px;">—</div></div>
       </div>
     </div>
-    <!-- Summary row 2: TH vs US -->
+    <!-- TH/US split -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
       <div class="card" style="margin-bottom:0;padding:14px;">
-        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🇹🇭 หุ้นไทย</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          <div><div class="port-metric-label">มูลค่า</div><div class="port-metric-val" id="port-th-val" style="font-size:14px;">—</div></div>
-          <div><div class="port-metric-label">P&L</div><div class="port-metric-val" id="port-th-pnl" style="font-size:14px;">—</div></div>
+        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">🇹🇭 หุ้นไทย (฿)</div>
+        <div style="display:grid;gap:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);">ต้นทุน</span><span class="port-metric-val" id="port-th-cost" style="font-size:12px;">—</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);">ปัจจุบัน</span><span class="port-metric-val" id="port-th-val" style="font-size:12px;">—</span></div>
+          <div style="border-top:1px solid var(--border-light);padding-top:6px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;color:var(--text-3);">P&L</span>
+            <div style="text-align:right;"><div class="port-metric-val" id="port-th-pnl" style="font-size:13px;">—</div><div id="port-th-pct" style="font-size:11px;"></div></div>
+          </div>
         </div>
       </div>
       <div class="card" style="margin-bottom:0;padding:14px;">
-        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🇺🇸 หุ้น US</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          <div><div class="port-metric-label">มูลค่า (฿)</div><div class="port-metric-val" id="port-us-val" style="font-size:14px;">—</div></div>
-          <div><div class="port-metric-label">P&L</div><div class="port-metric-val" id="port-us-pnl" style="font-size:14px;">—</div></div>
+        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">🇺🇸 หุ้น US</div>
+        <div style="display:grid;gap:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);">ต้นทุน</span><span class="port-metric-val" id="port-us-cost" style="font-size:12px;">—</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);">ปัจจุบัน</span><span class="port-metric-val" id="port-us-val" style="font-size:12px;">—</span></div>
+          <div style="border-top:1px solid var(--border-light);padding-top:6px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;color:var(--text-3);">P&L</span>
+            <div style="text-align:right;"><div class="port-metric-val" id="port-us-pnl" style="font-size:13px;">—</div><div id="port-us-pct" style="font-size:11px;"></div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -999,7 +1002,7 @@ function renderPortfolio(){
     <div class="card">
       <div class="port-section-title">หุ้น US (USD)</div>
       <table class="port-table">
-        <tr><th>หุ้น</th><th>ราคา</th><th>ต้นทุน</th><th>มูลค่า (฿)</th><th>P&L</th></tr>
+        <tr><th>หุ้น</th><th>ราคา</th><th>ต้นทุน ($)</th><th>มูลค่า (฿)</th><th>P&L (USD)</th></tr>
         <tbody id="port-us-body"></tbody>
       </table>
       <div style="font-size:11px;color:var(--text-3);margin-top:8px;" id="port-fx-rate">USD/THB: —</div>
