@@ -1351,12 +1351,13 @@ function initProfilePic(){
 
 // Thai timezone date helper (UTC+7)
 function thaiDateStr(offsetDays=0){
-  const d = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Bangkok'}));
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0,10);
+  const d = new Date(new Date().toLocaleString("en-US", {timeZone:"Asia/Bangkok"}));
+  d.setDate(d.getDate() + (offsetDays||0));
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  return y+"-"+m+"-"+day;
 }
 function thaiDate(offsetDays=0){
-  return new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Bangkok'}));
+  return new Date(new Date().toLocaleString("en-US", {timeZone:"Asia/Bangkok"}));
 }
 
 
