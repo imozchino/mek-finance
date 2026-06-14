@@ -1132,6 +1132,9 @@ async function initProfilePic(){
           <option value="ช้อปปิ้ง">🛍 ช้อปปิ้ง</option>
           <option value="สังสรรค์">🍻 สังสรรค์</option>
           <option value="สุขภาพ">💊 สุขภาพ</option>
+          <option value="บิล/สมาชิก">📱 บิล/สมาชิก</option>
+          <option value="การศึกษา">🎓 การศึกษา</option>
+          <option value="ออกกำลังกาย">💪 ออกกำลังกาย</option>
           <option value="อื่นๆ">📦 อื่นๆ</option>
         </select>
         <input type="date" id="entry-date"/>
@@ -1387,6 +1390,9 @@ async function initProfilePic(){
         <option value="ช้อปปิ้ง">🛍 ช้อปปิ้ง</option>
         <option value="สังสรรค์">🍻 สังสรรค์</option>
         <option value="สุขภาพ">💊 สุขภาพ</option>
+        <option value="บิล/สมาชิก">📱 บิล/สมาชิก</option>
+        <option value="การศึกษา">🎓 การศึกษา</option>
+        <option value="ออกกำลังกาย">💪 ออกกำลังกาย</option>
         <option value="อื่นๆ">📦 อื่นๆ</option>
       </select>
     </div>
@@ -1479,7 +1485,7 @@ const BIG_BILLS=[
   {month:'พฤศจิกายน',bill:0,billLabel:''},
   {month:'ธันวาคม',bill:81500,billLabel:'ค่าเทอม ปี 2 เทอม 2'},
 ];
-const CAT_COLORS={อาหาร:'#1A7A56',เครื่องดื่ม:'#6B4C9A',เดินทาง:'#1B5FA8',ช้อปปิ้ง:'#7B3FA8',สังสรรค์:'#9A6200',สุขภาพ:'#C0392B',อื่นๆ:'#6B6B65'};
+const CAT_COLORS={อาหาร:'#1A7A56',เครื่องดื่ม:'#6B4C9A',เดินทาง:'#1B5FA8',ช้อปปิ้ง:'#7B3FA8',สังสรรค์:'#9A6200',สุขภาพ:'#C0392B','บิล/สมาชิก':'#2E86AB',การศึกษา:'#5A4FCF',ออกกำลังกาย:'#16A085',อื่นๆ:'#6B6B65'};
 const MONTH_NAMES=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const ALL_CATS=Object.keys(CAT_COLORS);
 let cachedEntries=[],allEntries=[],catBudgets={};
