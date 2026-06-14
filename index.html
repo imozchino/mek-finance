@@ -324,23 +324,42 @@ if('serviceWorker' in navigator){
 }
 
 // DAY DROPDOWN
+function checkDateRollover(){
+  const today = thaiDateStr();
+  const lastSeen = localStorage.getItem('mek_last_seen_date');
+  const dateInput = document.getElementById('entry-date');
+  if(lastSeen !== today){
+    // Day changed since last check - update entry-date if it still shows the old date
+    if(dateInput && (dateInput.value === lastSeen || !lastSeen)){
+      dateInput.value = today;
+    }
+    localStorage.setItem('mek_last_seen_date', today);
+  }
+}
+
 function populateDayDropdown(){
   const sel = document.getElementById('view-day');
   if(!sel) return;
   const todayStr = thaiDateStr();
-  const days = [...new Set(cachedEntries.map(e=>e.entry_date))].sort().reverse();
+  let days = [...new Set(cachedEntries.map(e=>e.entry_date))];
+  // Always include today, even if no entries yet (only if viewing current month)
+  const viewMonth = +document.getElementById('view-month').value;
+  const todayMonth = thaiDate().getMonth()+1;
+  if(viewMonth === todayMonth && !days.includes(todayStr)) days.push(todayStr);
+  days = days.sort().reverse();
+
   const prevVal = sel.value;
   sel.innerHTML = '<option value="all">ทั้งเดือน</option>';
   days.forEach(d=>{
     const dt = new Date(d+'T00:00:00');
-      const label = dt.getDate()+' '+['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][dt.getMonth()+1];
+    const label = dt.getDate()+' '+['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][dt.getMonth()+1];
     const opt = document.createElement('option');
     opt.value = d; opt.textContent = label;
     if(d === todayStr) opt.textContent += ' (วันนี้)';
     sel.appendChild(opt);
   });
-  // default: today if exists, else all
-  if(days.includes(todayStr)) sel.value = todayStr;
+  // default: today if viewing current month, else keep prev selection, else all
+  if(viewMonth === todayMonth) sel.value = todayStr;
   else if(prevVal && [...sel.options].some(o=>o.value===prevVal)) sel.value = prevVal;
   else sel.value = 'all';
 }
@@ -1517,6 +1536,7 @@ function setSyncStatus(msg,color='var(--text-3)'){
 
 // LOAD ENTRIES
 async function loadEntries(){
+  checkDateRollover();
   const month=+document.getElementById('view-month').value;
   const from='2026-'+String(month).padStart(2,'0')+'-01';
   const lastDay=new Date(2026,month,0).getDate();
