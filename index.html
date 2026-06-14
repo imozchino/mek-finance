@@ -453,7 +453,7 @@ let holdings = JSON.parse(localStorage.getItem('mek_holdings') || 'null') || DEF
 let livePrice = {}; // {ticker: price}
 let usdThb = 35.5;
 
-function saveHoldings(){ localStorage.setItem('mek_holdings', JSON.stringify(holdings)); }
+function saveHoldings(){ localStorage.setItem('mek_holdings', JSON.stringify(holdings)); savePortfolioToServer(); }
 
 function addHolding(){
   const ticker = document.getElementById('new-ticker').value.trim().toUpperCase();
@@ -546,6 +546,7 @@ async function fetchPrices(){
     localStorage.setItem('mek_price_time', nowFull);
     status.textContent = 'อัปเดตล่าสุด '+now+' (delay ~15 นาที)';
     renderPortfolio();
+    savePortfolioToServer();
   } catch(e) {
     status.textContent = 'ดึงข้อมูลไม่ได้ กรุณาลองใหม่';
     renderPortfolio();
@@ -567,7 +568,7 @@ function setManualPrice(ticker, val){
   }
 }
 
-function loadCachedPrices(){
+function loadCachedPricesLocal(){
   try {
     const cached = localStorage.getItem('mek_prices');
     const cachedFx = localStorage.getItem('mek_usdthb');
@@ -582,6 +583,46 @@ function loadCachedPrices(){
       if(status) status.textContent = 'ราคาล่าสุด: '+cachedTime+' (กด Refresh เพื่ออัปเดต)';
     }
   } catch(e){}
+}
+
+async function loadCachedPrices(){
+  // 1) show local cache immediately (fast, works offline)
+  loadCachedPricesLocal();
+  renderPortfolio();
+  // 2) sync from Supabase (works across domains/devices)
+  try{
+    const r = await fetch(API+'/settings'+Q+'&key=eq.portfolio_data&select=value', {headers:HEADERS});
+    if(!r.ok) return;
+    const d = await r.json();
+    if(d && d[0] && d[0].value){
+      const data = JSON.parse(d[0].value);
+      if(data.holdings){ holdings = data.holdings; localStorage.setItem('mek_holdings', JSON.stringify(holdings)); }
+      if(data.prices){ Object.assign(livePrice, data.prices); localStorage.setItem('mek_prices', JSON.stringify(livePrice)); }
+      if(data.usdThb){ usdThb = data.usdThb; localStorage.setItem('mek_usdthb', usdThb); }
+      if(data.time){
+        localStorage.setItem('mek_price_time', data.time);
+        const status = document.getElementById('port-status');
+        if(status) status.textContent = 'ราคาล่าสุด: '+data.time+' (กด Refresh เพื่ออัปเดต)';
+      }
+      renderPortfolio();
+    }
+  }catch(e){}
+}
+
+async function savePortfolioToServer(){
+  try{
+    const payload = {
+      holdings: holdings,
+      prices: livePrice,
+      usdThb: usdThb,
+      time: localStorage.getItem('mek_price_time') || ''
+    };
+    await fetch(API+'/settings'+Q+'&on_conflict=key', {
+      method:'POST',
+      headers:{...HEADERS,'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify({key:'portfolio_data', value: JSON.stringify(payload)})
+    });
+  }catch(e){}
 }
 
 function renderPortfolio(){
