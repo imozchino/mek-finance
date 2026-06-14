@@ -863,7 +863,7 @@ function triggerProfileUpload(){
   if(el) el.click();
 }
 
-// ── PROFILE PICTURE ──
+// ── PROFILE PICTURE (synced to Supabase) ──
 function uploadProfilePic(input){
   const file = input.files[0];
   if(!file) return;
@@ -881,6 +881,7 @@ function uploadProfilePic(input){
       const dataUrl=canvas.toDataURL('image/jpeg',0.8);
       localStorage.setItem('mek_profile_pic',dataUrl);
       applyProfilePic(dataUrl);
+      saveProfilePicToServer(dataUrl);
     };
     img.src=e.target.result;
   };
@@ -899,8 +900,7 @@ function applyProfilePic(dataUrl){
   });
 }
 
-function removeProfilePic(){
-  localStorage.removeItem('mek_profile_pic');
+function showPlaceholder(){
   ['profile-img','settings-profile-img'].forEach(function(id){
     const img = document.getElementById(id);
     if(img){ img.src=''; img.style.display='none'; }
@@ -911,9 +911,42 @@ function removeProfilePic(){
   });
 }
 
-function initProfilePic(){
+async function saveProfilePicToServer(dataUrl){
+  try{
+    await fetch(API+'/settings'+Q+'&on_conflict=key', {
+      method:'POST',
+      headers:{...HEADERS,'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify({key:'profile_pic', value:dataUrl})
+    });
+  }catch(e){}
+}
+
+function removeProfilePic(){
+  localStorage.removeItem('mek_profile_pic');
+  showPlaceholder();
+  (async function(){
+    try{
+      await fetch(API+'/settings'+Q+'&key=eq.profile_pic', {method:'DELETE', headers:HEADERS});
+    }catch(e){}
+  })();
+}
+
+async function initProfilePic(){
+  // show cached version immediately
   const saved = localStorage.getItem('mek_profile_pic');
   if(saved) applyProfilePic(saved);
+  // then sync from server (works across devices/browsers)
+  try{
+    const r = await fetch(API+'/settings'+Q+'&key=eq.profile_pic&select=value', {headers:HEADERS});
+    if(!r.ok) return;
+    const d = await r.json();
+    if(d && d[0] && d[0].value){
+      localStorage.setItem('mek_profile_pic', d[0].value);
+      applyProfilePic(d[0].value);
+    } else if(!saved){
+      showPlaceholder();
+    }
+  }catch(e){}
 }
 
 </script>
