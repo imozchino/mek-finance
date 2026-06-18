@@ -115,8 +115,8 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 .budget-bar-bg{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
 .budget-bar-fill{height:100%;border-radius:4px;transition:width .4s,background .3s;}
 /* Form */
-.entry-form{display:grid;grid-template-columns:1fr 100px 110px 100px auto;gap:8px;align-items:center;margin-bottom:4px;}
-.entry-form input,.entry-form select,.entry-form textarea{font-family:var(--sans);font-size:16px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
+.entry-form{display:grid;grid-template-columns:1fr 100px 110px 100px auto;gap:8px;align-items:center;margin-bottom:4px;min-width:0;}
+.entry-form input,.entry-form select,.entry-form textarea{width:100%;min-width:0;font-family:var(--sans);font-size:16px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
 .entry-form input:focus,.entry-form select:focus{border-color:var(--blue);}
 .add-btn{font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 14px;border:none;border-radius:8px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;}
 .add-btn:hover{opacity:.88;}.add-btn:disabled{opacity:.4;cursor:not-allowed;}
@@ -202,7 +202,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
   .entry-form select{grid-column:2;}
   .entry-form input[type=date]{grid-column:1;}
   .entry-form .note-input{grid-column:1/-1;}
-  .entry-form .add-btn{grid-column:1/-1;}
+  .entry-form .add-btn{grid-column:1/-1;width:100%;min-width:0;}
   .entry-row{grid-template-columns:1fr auto 24px;font-size:13px;gap:6px;}
   .entry-row.hdr{display:none;}
   .entry-date{display:none;}
@@ -1327,7 +1327,7 @@ function aiShowConfirm(entry){
         <span style="font-size:12px;color:var(--text-3);">เมื่อวาน</span>
         <span style="font-family:var(--mono);font-size:13px;font-weight:500;" class="muted" id="tr-yesterday">฿0</span>
       </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:12px;color:var(--text-3);">วันนี้</span>
         <span style="font-family:var(--mono);font-size:13px;font-weight:500;" class="muted" id="tr-today">฿0</span>
       </div>
