@@ -1093,12 +1093,10 @@ async function aiWelcome(){
     const context = aiBuildContext();
     const systemPrompt = 'คุณเป็นผู้ช่วยการเงินส่วนตัวของ Mek พูดไทยเป็นกันเอง กระชับ ไม่เกิน 3-4 ประโยค ห้ามทักทายซ้ำซาก ตรงประเด็น\n\nข้อมูลการเงินปัจจุบันของ Mek:\n'+context+'\n\nงาน: ทักทายสั้นๆ แล้วสรุปสถานะการเงินเดือนนี้ให้ฟัง ถ้ามีหมวดไหนใช้เกินงบให้เตือนด้วย ถ้าไม่มีอะไรน่าเป็นห่วงก็บอกว่าโอเคปกติ';
 
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch(AI_PROXY_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:1000,
         system: systemPrompt,
         messages:[{role:'user', content:'สรุปสถานะให้หน่อย'}]
       })
@@ -1138,12 +1136,10 @@ async function aiSend(){
       '1) ถ้า Mek พิมพ์อธิบายรายการใช้จ่าย (เช่น "ข้าวเที่ยง 60 บาท" หรือ "เติมน้ำมัน 300") ให้ตอบกลับเป็น JSON เท่านั้น รูปแบบ: {"action":"add_entry","description":"...","amount":number,"category":"หมวดที่เหมาะสมจากลิสต์: '+ALL_CATS.join(', ')+'","note":""} ห้ามมีข้อความอื่นนอกจาก JSON\n' +
       '2) ถ้า Mek ถามคำถามทั่วไปเกี่ยวกับการเงิน/พอร์ต/แผนการเงิน ให้ตอบเป็นข้อความธรรมดา (ไม่ใช่ JSON) สั้นกระชับ เป็นกันเอง อิงจากข้อมูลที่ให้มาจริงๆ ไม่มั่ว';
 
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
+    const res = await fetch(AI_PROXY_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:1000,
         system: systemPrompt,
         messages: aiHistory.slice(-10)
       })
@@ -1734,6 +1730,7 @@ function initPlannerLock(){
 const SUPABASE_URL='https://ahelypphgebpszhvmfrc.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoZWx5cHBoZ2VicHN6aHZtZnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNjQ5MTMsImV4cCI6MjA5NjY0MDkxM30.xIxfh1jeNSgHhqt2NX_V3d-eHxm_MQepoSGCXnBvfeE';
 const HEADERS={'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};
+const AI_PROXY_URL='https://mek-ai-proxy.mek9574.workers.dev/';
 const API=SUPABASE_URL+'/rest/v1';
 const Q='?apikey='+SUPABASE_KEY;
 
