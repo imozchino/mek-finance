@@ -310,6 +310,33 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
   .profile-pic img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
   .profile-pic-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--blue-bg);color:var(--blue);}
 
+
+  /* ── AI Assistant ── */
+  .ai-fab{position:fixed;bottom:20px;right:20px;width:54px;height:54px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:200;display:flex;align-items:center;justify-content:center;}
+  .ai-fab:active{transform:scale(.93);}
+  .ai-panel{position:fixed;bottom:0;right:0;left:0;top:0;background:rgba(0,0,0,.35);z-index:300;display:none;align-items:flex-end;justify-content:center;}
+  .ai-panel.open{display:flex;}
+  .ai-sheet{background:var(--surface);width:100%;max-width:480px;height:82vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden;}
+  .ai-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .ai-header-title{font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px;}
+  .ai-close{background:none;border:none;font-size:20px;color:var(--text-3);cursor:pointer;padding:4px 8px;}
+  .ai-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+  .ai-msg{max-width:85%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.5;white-space:pre-wrap;}
+  .ai-msg.user{align-self:flex-end;background:var(--blue);color:#fff;border-radius:14px 14px 4px 14px;}
+  .ai-msg.bot{align-self:flex-start;background:var(--bg);color:var(--text);border-radius:14px 14px 14px 4px;border:1px solid var(--border-light);}
+  .ai-msg.bot.loading{color:var(--text-3);font-style:italic;}
+  .ai-confirm-box{align-self:flex-start;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;max-width:90%;}
+  .ai-confirm-row{display:flex;justify-content:space-between;margin-bottom:3px;}
+  .ai-confirm-btns{display:flex;gap:8px;margin-top:8px;}
+  .ai-confirm-btns button{flex:1;padding:7px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;}
+  .ai-confirm-yes{background:var(--blue);color:#fff;}
+  .ai-confirm-no{background:var(--border-light);color:var(--text-2);}
+  .ai-input-row{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0;}
+  .ai-input-row input{flex:1;border:1px solid var(--border);border-radius:20px;padding:10px 16px;font-size:14px;background:var(--bg);color:var(--text);outline:none;}
+  .ai-send-btn{width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:16px;cursor:pointer;flex-shrink:0;}
+  .ai-suggest-chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px;flex-shrink:0;}
+  .ai-chip{font-size:12px;background:var(--blue-bg);color:var(--blue);border:none;border-radius:14px;padding:6px 12px;cursor:pointer;}
+
 </style>
 
 <script>
@@ -988,6 +1015,201 @@ async function initProfilePic(){
       showPlaceholder();
     }
   }catch(e){}
+}
+
+
+// ══════════════ AI ASSISTANT ══════════════
+let aiHistory = []; // {role, content}
+let aiOpened = false;
+
+function openAiPanel(){
+  document.getElementById('ai-panel').classList.add('open');
+  if(!aiOpened){
+    aiOpened = true;
+    aiWelcome();
+  }
+}
+function closeAiPanel(){
+  document.getElementById('ai-panel').classList.remove('open');
+}
+
+function aiAddMsg(role, text){
+  const wrap = document.getElementById('ai-msgs');
+  const div = document.createElement('div');
+  div.className = 'ai-msg ' + (role==='user'?'user':'bot');
+  div.textContent = text;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return div;
+}
+
+function aiBuildContext(){
+  // Gather current financial snapshot for the AI to reason about
+  const today = thaiDateStr();
+  const month = thaiDate().getMonth()+1;
+  const monthEntries = cachedEntries; // already scoped to viewed month
+  const totalSpent = monthEntries.reduce((s,e)=>s+Number(e.amt),0);
+  const budget = window._budget || parseInt(localStorage.getItem('mek_budget')) || 17500;
+
+  // by category
+  const byCat = {};
+  monthEntries.forEach(e=>{ byCat[e.cat] = (byCat[e.cat]||0) + Number(e.amt); });
+
+  // recent entries (last 15)
+  const recent = monthEntries.slice(0,15).map(e=>e.entry_date+' '+e.description+' '+e.cat+' -'+e.amt);
+
+  // portfolio
+  let portSummary = 'ไม่มีข้อมูลพอร์ต';
+  try{
+    if(holdings && holdings.length){
+      const lines = holdings.map(h=>{
+        const price = livePrice[h.ticker];
+        const val = price ? (price*h.shares) : null;
+        return h.ticker+': '+h.shares+' หน่วย, ทุนเฉลี่ย '+h.avgCost+', ราคาล่าสุด '+(price||'ไม่ทราบ')+(val?', มูลค่า '+Math.round(val):'');
+      });
+      portSummary = lines.join('\n');
+    }
+  }catch(e){}
+
+  // planner targets (if available in localStorage)
+  const plannerLiving = document.getElementById('living-slider') ? document.getElementById('living-slider').value : null;
+  const plannerTarget = document.getElementById('target-slider') ? document.getElementById('target-slider').value : null;
+
+  return [
+    'วันนี้: '+today,
+    'งบเดือนนี้: '+budget+' บาท, ใช้ไปแล้ว: '+Math.round(totalSpent)+' บาท, คงเหลือ: '+Math.round(budget-totalSpent)+' บาท',
+    'ใช้จ่ายแยกตามหมวด: '+JSON.stringify(byCat),
+    'งบที่ตั้งไว้แต่ละหมวด: '+JSON.stringify(catBudgets),
+    'รายการล่าสุด (สูงสุด 15 รายการ):\n'+recent.join('\n'),
+    plannerLiving?('Planner - ค่าใช้จ่ายต่อเดือนที่ตั้งไว้: '+plannerLiving+', เป้าเงินเหลือปลายธ.ค.: '+plannerTarget):'',
+    'พอร์ตการลงทุน:\n'+portSummary
+  ].filter(Boolean).join('\n\n');
+}
+
+async function aiWelcome(){
+  const loadingDiv = aiAddMsg('bot','...');
+  loadingDiv.classList.add('loading');
+  try{
+    const context = aiBuildContext();
+    const systemPrompt = 'คุณเป็นผู้ช่วยการเงินส่วนตัวของ Mek พูดไทยเป็นกันเอง กระชับ ไม่เกิน 3-4 ประโยค ห้ามทักทายซ้ำซาก ตรงประเด็น\n\nข้อมูลการเงินปัจจุบันของ Mek:\n'+context+'\n\nงาน: ทักทายสั้นๆ แล้วสรุปสถานะการเงินเดือนนี้ให้ฟัง ถ้ามีหมวดไหนใช้เกินงบให้เตือนด้วย ถ้าไม่มีอะไรน่าเป็นห่วงก็บอกว่าโอเคปกติ';
+
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system: systemPrompt,
+        messages:[{role:'user', content:'สรุปสถานะให้หน่อย'}]
+      })
+    });
+    const data = await res.json();
+    const text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n') || 'สวัสดีครับ มีอะไรให้ช่วยไหมครับ';
+    loadingDiv.remove();
+    aiAddMsg('bot', text);
+    aiHistory.push({role:'assistant', content:text});
+  }catch(e){
+    loadingDiv.remove();
+    aiAddMsg('bot','สวัสดีครับ! ถามเรื่องการเงิน หรือพิมพ์รายการที่ใช้จ่ายได้เลยครับ เช่น "ข้าวกลางวัน 60 บาท"');
+  }
+}
+
+function aiAsk(text){
+  document.getElementById('ai-input').value = text;
+  aiSend();
+}
+
+async function aiSend(){
+  const input = document.getElementById('ai-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value='';
+  aiAddMsg('user', text);
+  aiHistory.push({role:'user', content:text});
+
+  const loadingDiv = aiAddMsg('bot','กำลังคิด...');
+  loadingDiv.classList.add('loading');
+
+  try{
+    const context = aiBuildContext();
+    const systemPrompt = 'คุณเป็นผู้ช่วยการเงินส่วนตัวของ Mek พูดไทยเป็นกันเอง กระชับ ตรงประเด็น ไม่ต้องทักทาย\n\n' +
+      'ข้อมูลการเงินปัจจุบันของ Mek:\n'+context+'\n\n' +
+      'หน้าที่ของคุณมี 2 อย่าง:\n' +
+      '1) ถ้า Mek พิมพ์อธิบายรายการใช้จ่าย (เช่น "ข้าวเที่ยง 60 บาท" หรือ "เติมน้ำมัน 300") ให้ตอบกลับเป็น JSON เท่านั้น รูปแบบ: {"action":"add_entry","description":"...","amount":number,"category":"หมวดที่เหมาะสมจากลิสต์: '+ALL_CATS.join(', ')+'","note":""} ห้ามมีข้อความอื่นนอกจาก JSON\n' +
+      '2) ถ้า Mek ถามคำถามทั่วไปเกี่ยวกับการเงิน/พอร์ต/แผนการเงิน ให้ตอบเป็นข้อความธรรมดา (ไม่ใช่ JSON) สั้นกระชับ เป็นกันเอง อิงจากข้อมูลที่ให้มาจริงๆ ไม่มั่ว';
+
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system: systemPrompt,
+        messages: aiHistory.slice(-10)
+      })
+    });
+    const data = await res.json();
+    const rawText = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n');
+    loadingDiv.remove();
+
+    // Try to parse as entry JSON
+    let parsed = null;
+    try{
+      const cleaned = rawText.replace(/```json|```/g,'').trim();
+      parsed = JSON.parse(cleaned);
+    }catch(e){}
+
+    if(parsed && parsed.action === 'add_entry'){
+      aiShowConfirm(parsed);
+      aiHistory.push({role:'assistant', content: rawText});
+    } else {
+      aiAddMsg('bot', rawText || 'ขอโทษครับ ตอบไม่ได้ ลองถามใหม่อีกครั้งนะครับ');
+      aiHistory.push({role:'assistant', content: rawText});
+    }
+  }catch(e){
+    loadingDiv.remove();
+    aiAddMsg('bot','เกิดข้อผิดพลาด ลองใหม่อีกครั้งครับ');
+  }
+}
+
+function aiShowConfirm(entry){
+  const wrap = document.getElementById('ai-msgs');
+  const box = document.createElement('div');
+  box.className = 'ai-confirm-box';
+  box.innerHTML = ''
+    + '<div class="ai-confirm-row"><span>รายการ</span><b>'+entry.description+'</b></div>'
+    + '<div class="ai-confirm-row"><span>จำนวน</span><b>฿'+Number(entry.amount).toLocaleString()+'</b></div>'
+    + '<div class="ai-confirm-row"><span>หมวด</span><b>'+entry.category+'</b></div>'
+    + '<div class="ai-confirm-btns">'
+    + '<button class="ai-confirm-yes" id="ai-confirm-yes-btn">✓ บันทึก</button>'
+    + '<button class="ai-confirm-no" id="ai-confirm-no-btn">ยกเลิก</button>'
+    + '</div>';
+  wrap.appendChild(box);
+  wrap.scrollTop = wrap.scrollHeight;
+
+  document.getElementById('ai-confirm-yes-btn').onclick = async function(){
+    box.innerHTML = '<div style="color:var(--text-3);">กำลังบันทึก...</div>';
+    try{
+      await fetch(API+'/entries'+Q, {
+        method:'POST',
+        headers:{...HEADERS,'Prefer':'return=representation'},
+        body: JSON.stringify({
+          description: entry.description,
+          amt: entry.amount,
+          cat: entry.category,
+          entry_date: thaiDateStr(),
+          note: entry.note || null
+        })
+      });
+      box.innerHTML = '<div style="color:var(--green);">✓ บันทึกแล้ว</div>';
+      await loadEntries();
+    }catch(e){
+      box.innerHTML = '<div style="color:var(--red);">บันทึกไม่สำเร็จ ลองใหม่ครับ</div>';
+    }
+  };
+  document.getElementById('ai-confirm-no-btn').onclick = function(){
+    box.innerHTML = '<div style="color:var(--text-3);">ยกเลิกแล้ว</div>';
+  };
 }
 
 </script>
@@ -1932,5 +2154,27 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 update();
 </script>
+
+<!-- AI Assistant -->
+<button class="ai-fab" onclick="openAiPanel()">🤖</button>
+<div class="ai-panel" id="ai-panel" onclick="if(event.target===this)closeAiPanel()">
+  <div class="ai-sheet">
+    <div class="ai-header">
+      <div class="ai-header-title">🤖 ผู้ช่วยการเงิน</div>
+      <button class="ai-close" onclick="closeAiPanel()">✕</button>
+    </div>
+    <div class="ai-msgs" id="ai-msgs"></div>
+    <div class="ai-suggest-chips" id="ai-chips">
+      <button class="ai-chip" onclick="aiAsk('เดือนนี้ใช้หมวดไหนเยอะสุด')">หมวดไหนเยอะสุด</button>
+      <button class="ai-chip" onclick="aiAsk('สรุปสถานะการเงินตอนนี้ให้ฟังหน่อย')">สรุปสถานะตอนนี้</button>
+      <button class="ai-chip" onclick="aiAsk('ถ้าอยากให้ถึงเป้าปลายปีต้องทำไง')">วิธีให้ถึงเป้า</button>
+    </div>
+    <div class="ai-input-row">
+      <input type="text" id="ai-input" placeholder="ถามอะไรก็ได้ หรือพิมพ์รายการที่ใช้..." onkeydown="if(event.key==='Enter')aiSend();"/>
+      <button class="ai-send-btn" onclick="aiSend()">➤</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
