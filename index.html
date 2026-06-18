@@ -118,7 +118,9 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 .entry-form{display:grid;grid-template-columns:1fr 100px 110px 100px auto;gap:8px;align-items:center;margin-bottom:4px;min-width:0;}
 .entry-form input,.entry-form select,.entry-form textarea{width:100%;min-width:0;height:42px;box-sizing:border-box;font-family:var(--sans);font-size:16px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;}
 .entry-form input:focus,.entry-form select:focus{border-color:var(--blue);}
-.date-input-wrap{width:100%;min-width:0;overflow:hidden;display:block;}
+.date-input-wrap:focus-within{border-color:var(--blue);}
+.date-input-wrap{width:100%;min-width:0;overflow:hidden;display:block;border:1px solid var(--border);border-radius:8px;background:var(--surface);}
+.date-input-wrap input[type=date]{border:none;background:transparent;border-radius:0;}
 .date-input-wrap input[type=date]{width:100%;min-width:0;max-width:100%;}
 .add-btn{font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 14px;border:none;border-radius:8px;background:var(--blue);color:#fff;cursor:pointer;white-space:nowrap;}
 .add-btn:hover{opacity:.88;}.add-btn:disabled{opacity:.4;cursor:not-allowed;}
