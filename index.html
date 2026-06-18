@@ -10,31 +10,41 @@
 <meta name="theme-color" content="#1B5FA8"/>
 <title>Mek's Finance Planner</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#EEF3FB;--surface:#FFFFFF;--border:#C8D8EF;--border-light:#DDE8F5;
-  --text:#0D1B2A;--text-2:#3A5068;--text-3:#7A96B0;
+  --bg:#EAF0FA;--surface:#FFFFFF;--border:#C5D5EC;--border-light:#DCE6F5;
+  --text:#0B1F3A;--text-2:#3A5068;--text-3:#7A8FA8;
   --green:#1A7A56;--green-bg:#EBF5F0;
   --red:#C0392B;--red-bg:#FCECEA;
   --amber:#9A6200;--amber-bg:#FEF5E4;
-  --blue:#1B5FA8;--blue-bg:#DDEAF9;
-  --mono:'IBM Plex Mono',monospace;--sans:'Inter',sans-serif;
+  --blue:#1B3A7A;--blue-light:#2F5FCB;--blue-bg:#E3EBFB;
+  --grad:#1B3A7A;
+  --mono:'IBM Plex Mono',monospace;--sans:'Plus Jakarta Sans',sans-serif;
 }
-body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;}
-.page{max-width:760px;margin:0 auto;padding:40px 20px 80px;}
-.header{margin-bottom:28px;}
-.header-label{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;}
-.header-title{font-size:26px;font-weight:600;letter-spacing:-.02em;color:var(--blue);}
-.header-sub{font-size:13px;color:var(--text-2);margin-top:4px;}
-/* Tabs */
-.tabs{display:flex;gap:2px;background:var(--border-light);border-radius:10px;padding:3px;margin-bottom:20px;}
-.tab-btn{flex:1;font-family:var(--sans);font-size:13px;font-weight:500;padding:8px 10px;border:none;border-radius:8px;background:none;color:var(--text-3);cursor:pointer;transition:all .15s;}
-.tab-btn.active{background:var(--blue);color:#fff;box-shadow:0 1px 4px rgba(27,95,168,.25);}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;font-weight:500;}
+.page{max-width:760px;margin:0 auto;padding:0 0 100px;}
+.page-content{padding:0 16px;}
+/* ── App Header (full-bleed navy gradient, KBank style) ── */
+.app-header{background:var(--grad);padding:18px 16px 22px;border-radius:0 0 24px 24px;box-shadow:0 4px 16px rgba(11,31,58,.25);margin-bottom:14px;}
+.app-header-inner{max-width:728px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
+.header-row{display:flex;align-items:center;gap:12px;}
+.header-label{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:2px;}
+.header-title{font-size:21px;font-weight:700;letter-spacing:-.01em;color:#fff;}
+.header-sub{font-size:13px;color:rgba(255,255,255,.75);margin-top:4px;}
+
+/* ── Bottom Tab Bar (fixed, KBank style) ── */
+.bottom-tabs{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;justify-content:center;gap:0;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:150;box-shadow:0 -2px 12px rgba(11,31,58,.08);}
+.bottom-tab-btn{flex:1;max-width:140px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:6px 4px;color:var(--text-3);font-family:var(--sans);}
+.bottom-tab-icon{font-size:20px;line-height:1;}
+.bottom-tab-label{font-size:11px;font-weight:600;}
+.bottom-tab-btn.active{color:var(--blue-light);}
+.bottom-tab-btn.active .bottom-tab-icon{transform:scale(1.08);}
+
 .tab-panel{display:none;}.tab-panel.active{display:block;}
 /* Cards */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px;}
-.card-title{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:14px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:14px;}
 /* Sliders */
 .sliders-grid{display:grid;gap:18px;}
 .slider-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
@@ -216,7 +226,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
   .lock-popup-btn:hover{opacity:.88;}
   .lock-popup-cancel{font-family:var(--sans);font-size:13px;color:var(--text-3);background:none;border:none;cursor:pointer;padding:4px;}
 
-  .refresh-btn{position:fixed;top:14px;right:16px;width:36px;height:36px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(27,95,168,.3);z-index:50;transition:transform .3s;}
+  .refresh-btn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.18);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .3s;}
   .refresh-btn:active{transform:scale(.9);}
   .refresh-btn svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
   .refresh-btn.spinning svg{animation:spin .7s linear infinite;}
@@ -277,42 +287,26 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
   }
 
 
-  /* Light themes - only change accent color + subtle bg tint */
-  /* Light themes */
-  body.theme-green{ --blue:#1A7A56;--blue-bg:#EBF5F0;--bg:#EEF7F3;--surface:#FFFFFF;--border:#B8D8CC;--border-light:#D5EDE4; }
-  body.theme-purple{ --blue:#6B3FA8;--blue-bg:#F0EAFB;--bg:#F0EAF9;--surface:#FFFFFF;--border:#C8B0E8;--border-light:#DDD0F2; }
-  body.theme-red{ --blue:#C0392B;--blue-bg:#FCECEA;--bg:#FAEAEA;--surface:#FFFFFF;--border:#E8B4B4;--border-light:#F5D0D0; }
-  body.theme-orange{ --blue:#D46A1A;--blue-bg:#FEF0E4;--bg:#FEF3E8;--surface:#FFFFFF;--border:#E8C49A;--border-light:#F5DEC4; }
-  body.theme-black{ --blue:#1A1A1A;--blue-bg:#F0F0F0;--bg:#F2F2F2;--surface:#FFFFFF;--border:#C0C0C0;--border-light:#DCDCDC; }
-  /* Dark mode base */
+  /* Dark mode - KBank navy stays consistent, just inverts surfaces */
   body.dark{
-    --bg:#111827;--surface:#1F2937;--border:#374151;--border-light:#2D3748;
-    --text:#F9FAFB;--text-2:#D1D5DB;--text-3:#9CA3AF;
-    --blue:#60A5FA;--blue-bg:#1E3A5F;
-    --green:#34D399;--green-bg:#064E3B;
-    --red:#F87171;--red-bg:#450A0A;
-    --amber:#FBBF24;--amber-bg:#451A03;
+    --bg:#0A1628;--surface:#13233D;--border:#26395C;--border-light:#1C2E4D;
+    --text:#EAF0FA;--text-2:#A8BEDC;--text-3:#6E84A8;
+    --blue:#4A7FE8;--blue-light:#6B9AF0;--blue-bg:#1C3260;
+    --grad:#13265C;
+    --green:#34D399;--green-bg:#0C3328;
+    --red:#F87171;--red-bg:#3D1414;
+    --amber:#FBBF24;--amber-bg:#3D2D08;
   }
-  /* Dark + theme accent colors - higher specificity */
-  body.dark.theme-green{ --blue:#34D399;--blue-bg:#064E3B; }
-  body.dark.theme-purple{ --blue:#A78BFA;--blue-bg:#2E1065; }
-  body.dark.theme-red{ --blue:#F87171;--blue-bg:#450A0A; }
-  body.dark.theme-orange{ --blue:#FB923C;--blue-bg:#431407; }
-  body.dark.theme-black{ --blue:#D1D5DB;--blue-bg:#1F2937; }
-  .theme-btn{width:28px;height:28px;border-radius:50%;border:3px solid transparent;cursor:pointer;outline:none;padding:0;flex-shrink:0;}
-  .theme-btn.active{border-color:var(--text);}
-  .theme-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 
 
   /* Profile picture */
-  .header-row{display:flex;align-items:center;gap:14px;margin-bottom:4px;}
-  .profile-pic{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;background:var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;}
+  .profile-pic{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.3);flex-shrink:0;background:rgba(255,255,255,.15);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;}
   .profile-pic img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
-  .profile-pic-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--blue-bg);color:var(--blue);}
+  .profile-pic-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,.12);color:#fff;}
 
 
   /* ── AI Assistant ── */
-  .ai-fab{position:fixed;bottom:20px;right:20px;width:54px;height:54px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:200;display:flex;align-items:center;justify-content:center;}
+  .ai-fab{position:fixed;bottom:84px;right:20px;width:54px;height:54px;border-radius:50%;background:var(--grad);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 14px rgba(11,31,58,.35);z-index:160;display:flex;align-items:center;justify-content:center;}
   .ai-fab:active{transform:scale(.93);}
   .ai-panel{position:fixed;bottom:0;right:0;left:0;top:0;background:rgba(0,0,0,.35);z-index:300;display:none;align-items:flex-end;justify-content:center;}
   .ai-panel.open{display:flex;}
@@ -732,7 +726,7 @@ function renderPortfolio(){
     var el=document.getElementById(id);
     if(!el) return;
     el.textContent=text;
-    if(cls) el.className='port-metric-val '+cls;
+    el.className='port-metric-val '+(cls||'');
   }
   function pnlCls(v){ return v>=0?'pos':'neg'; }
   function fmtBaht(v){ return (v>=0?'+':'')+' ฿'+Math.round(Math.abs(v)).toLocaleString(); }
@@ -741,7 +735,7 @@ function renderPortfolio(){
   // Overall
   setEl('port-total-cost','฿'+Math.round(totalCost).toLocaleString());
   setEl('port-total-val','฿'+Math.round(totalVal).toLocaleString());
-  setEl('port-total-pnl', fmtBaht(totalPnl)+' ('+fmtPct(totalPnl,totalCost)+')', pnlCls(totalPnl));
+  setEl('port-total-pnl', fmtBaht(totalPnl)+' ('+fmtPct(totalPnl,totalCost)+')');
 
   // TH
   var thPnl=thVal-thCost;
@@ -885,41 +879,14 @@ async function checkBiometric(){
   }
 }
 
-// ── COLOR THEME ──
-const THEME_NAMES = {blue:'Blue',green:'Green',purple:'Purple',red:'Red',orange:'Orange',black:'Black'};
-const DARK_ACCENT = {
-  blue:'#60A5FA', green:'#34D399', purple:'#A78BFA',
-  red:'#F87171', orange:'#FB923C', black:'#D1D5DB'
-};
-const DARK_ACCENT_BG = {
-  blue:'#1E3A5F', green:'#064E3B', purple:'#2E1065',
-  red:'#450A0A', orange:'#431407', black:'#1F2937'
-};
-
+// ── COLOR THEME (KBank single theme - kept as no-op stubs for compatibility) ──
 function setTheme(name, btn){
-  ['blue','green','purple','red','orange','black'].forEach(t=>{
-    document.body.classList.remove('theme-'+t);
-    const el = document.getElementById('theme-'+t);
-    if(el) el.classList.remove('active');
-  });
-  if(name !== 'blue') document.body.classList.add('theme-'+name);
-  if(btn) btn.classList.add('active');
-  const nameEl = document.getElementById('theme-name');
-  if(nameEl) nameEl.textContent = THEME_NAMES[name]||name;
-  // If dark mode is on, manually set accent color on body
-  if(document.body.classList.contains('dark')){
-    document.body.style.setProperty('--blue', DARK_ACCENT[name]||'#60A5FA');
-    document.body.style.setProperty('--blue-bg', DARK_ACCENT_BG[name]||'#1E3A5F');
-  } else {
-    document.body.style.removeProperty('--blue');
-    document.body.style.removeProperty('--blue-bg');
-  }
-  localStorage.setItem('mek_theme', name);
+  // Single KBank theme now - this function is kept as a no-op so any
+  // remaining calls elsewhere don't throw.
 }
 
 function initTheme(){
-  const saved = localStorage.getItem('mek_theme') || 'blue';
-  setTheme(saved, document.getElementById('theme-'+saved));
+  // Nothing to initialize - single fixed KBank theme.
 }
 
 // ── SAVE PORT TOTAL FOR WIDGET ──
@@ -1212,28 +1179,26 @@ function aiShowConfirm(entry){
 </head>
 <body>
 <div class="page">
-  <button class="refresh-btn" id="refresh-btn" onclick="doRefresh()" title="รีเฟรช">
-    <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-  </button>
-   <div class="header">
-     <div class="header-label">Personal Finance · 2026</div>
-     <div class="header-row">
-       <div class="profile-pic" id="profile-pic" onclick="triggerProfileUpload()">
-         <div class="profile-pic-placeholder" id="profile-placeholder">👤</div>
-         <img id="profile-img" src="" style="display:none;border-radius:50%;width:100%;height:100%;object-fit:cover;"/>
-       </div>
-       <div class="header-title">Mek's Finance Planner</div>
-     </div>
-   </div>
-   <input type="file" id="profile-upload" accept="image/*" style="display:none;" onchange="uploadProfilePic(this)"/>
-
-
-  <div class="tabs">
-    <button class="tab-btn" onclick="switchTab('planner',this)">📊 Planner</button>
-    <button class="tab-btn active" onclick="switchTab('tracker',this)">📝 Tracker</button>
-    <button class="tab-btn" onclick="switchTab('portfolio',this)">📈 Portfolio</button>
-    <button class="tab-btn" onclick="switchTab('settings',this)">⚙️ Settings</button>
+  <div class="app-header" id="app-header">
+    <div class="app-header-inner">
+      <div class="header-row">
+        <div class="profile-pic" id="profile-pic" onclick="triggerProfileUpload()">
+          <div class="profile-pic-placeholder" id="profile-placeholder">👤</div>
+          <img id="profile-img" src="" style="display:none;border-radius:50%;width:100%;height:100%;object-fit:cover;"/>
+        </div>
+        <div>
+          <div class="header-label">Personal Finance · 2026</div>
+          <div class="header-title" id="header-title-text">Tracker</div>
+        </div>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" onclick="doRefresh()" title="รีเฟรช">
+        <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+    </div>
   </div>
+  <input type="file" id="profile-upload" accept="image/*" style="display:none;" onchange="uploadProfilePic(this)"/>
+
+  <div class="page-content">
 
   <!-- PLANNER -->
   <div class="tab-panel" id="tab-planner"><div id="planner-content" style="display:none;">
@@ -1335,30 +1300,30 @@ function aiShowConfirm(entry){
       <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
     </div>
 
-    <!-- Compact summary row -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
-        <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">งบเดือนนี้</div>
-        <div style="font-family:var(--mono);font-size:14px;font-weight:500;" id="tr-budget">฿17,500</div>
+    <!-- KBank-style hero summary card -->
+    <div style="background:var(--grad);border-radius:18px;padding:18px 20px;margin-bottom:10px;box-shadow:0 4px 16px rgba(11,31,58,.25);">
+      <div style="font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">คงเหลือเดือนนี้</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:600;color:#fff;" id="tr-remain">฿17,500</div>
+      <div style="display:flex;gap:18px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);">
+        <div style="flex:1;">
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">งบเดือนนี้</div>
+          <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="tr-budget">฿17,500</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">ใช้ไป</div>
+          <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="tr-spent">฿0</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">ใช้ได้วันละ</div>
+          <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="tr-daily-val">—</div>
+        </div>
       </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
-        <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">ใช้ไป</div>
-        <div style="font-family:var(--mono);font-size:14px;font-weight:500;" class="neg" id="tr-spent">฿0</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
-        <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">คงเหลือ</div>
-        <div style="font-family:var(--mono);font-size:14px;font-weight:500;" class="pos" id="tr-remain">฿17,500</div>
-      </div>
-      <div style="background:var(--blue);border-radius:10px;padding:10px 12px;">
-        <div style="font-size:10px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">ใช้ได้วันละ</div>
-        <div style="font-family:var(--mono);font-size:14px;font-weight:500;color:#fff;" id="tr-daily-val">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px;" id="tr-daily-desc">—</div>
-      </div>
+      <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:6px;" id="tr-daily-desc">—</div>
     </div>
 
     <!-- Today/Yesterday compact -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
         <span style="font-size:12px;color:var(--text-3);">เมื่อวาน</span>
         <span style="font-family:var(--mono);font-size:13px;font-weight:500;" class="muted" id="tr-yesterday">฿0</span>
       </div>
@@ -1458,26 +1423,14 @@ function aiShowConfirm(entry){
           <span id="dark-thumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
         </label>
       </div>
-      <div style="padding:12px 0;border-bottom:1px solid var(--border-light);">
-        <div style="font-size:13px;font-weight:500;margin-bottom:8px;">Color Theme</div>
-        <div class="theme-row">
-          <button class="theme-btn active" id="theme-blue"   style="background:#1B5FA8;" onclick="setTheme('blue',this)"   title="Blue (default)"></button>
-          <button class="theme-btn"        id="theme-green"  style="background:#1A7A56;" onclick="setTheme('green',this)"  title="Green"></button>
-          <button class="theme-btn"        id="theme-purple" style="background:#6B3FA8;" onclick="setTheme('purple',this)" title="Purple"></button>
-          <button class="theme-btn"        id="theme-red"    style="background:#C0392B;" onclick="setTheme('red',this)"    title="Red"></button>
-          <button class="theme-btn"        id="theme-orange" style="background:#D46A1A;" onclick="setTheme('orange',this)" title="Orange"></button>
-          <button class="theme-btn"        id="theme-black"  style="background:#1A1A1A;" onclick="setTheme('black',this)"  title="Black"></button>
-          <span style="font-size:12px;color:var(--text-3);margin-left:4px;" id="theme-name">Blue</span>
-        </div>
-      </div>
 
     </div>
 
     <div class="card">
       <div class="card-title">รูปโปรไฟล์</div>
       <div style="display:flex;align-items:center;gap:16px;padding:4px 0;">
-        <div class="profile-pic" style="width:60px;height:60px;" onclick="triggerProfileUpload()">
-          <div class="profile-pic-placeholder" id="settings-profile-placeholder">👤</div>
+        <div class="profile-pic" style="width:60px;height:60px;border-color:var(--border);background:var(--blue-bg);" onclick="triggerProfileUpload()">
+          <div class="profile-pic-placeholder" id="settings-profile-placeholder" style="background:var(--blue-bg);color:var(--blue);">👤</div>
           <img id="settings-profile-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
         </div>
         <div>
@@ -1505,12 +1458,18 @@ function aiShowConfirm(entry){
       </button>
     </div>
     <!-- Overall summary -->
-    <div class="card" style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">ภาพรวมทั้งหมด (THB)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-        <div><div class="port-metric-label">ต้นทุนรวม</div><div class="port-metric-val" id="port-total-cost" style="font-size:15px;">—</div></div>
-        <div><div class="port-metric-label">มูลค่าปัจจุบัน</div><div class="port-metric-val" id="port-total-val" style="font-size:15px;">—</div></div>
-        <div><div class="port-metric-label">กำไร/ขาดทุน</div><div class="port-metric-val" id="port-total-pnl" style="font-size:15px;">—</div></div>
+    <div style="background:var(--grad);border-radius:18px;padding:18px 20px;margin-bottom:10px;box-shadow:0 4px 16px rgba(11,31,58,.25);">
+      <div style="font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">มูลค่าปัจจุบัน (THB)</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:600;color:#fff;" id="port-total-val">—</div>
+      <div style="display:flex;gap:18px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);">
+        <div style="flex:1;">
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">ต้นทุนรวม</div>
+          <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="port-total-cost">—</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">กำไร/ขาดทุน</div>
+          <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="port-total-pnl">—</div>
+        </div>
       </div>
     </div>
     <!-- TH/US split -->
@@ -1595,7 +1554,24 @@ function aiShowConfirm(entry){
     <div class="alert info">📌 ราคาหุ้น delay ~15 นาที จาก Yahoo Finance — ไม่เหมาะสำหรับการซื้อขาย ใช้เพื่อติดตาม portfolio เท่านั้นครับ</div>
   </div>
 
+  </div><!-- /page-content -->
 
+  <div class="bottom-tabs">
+    <button class="bottom-tab-btn" id="btab-planner" onclick="switchTab('planner',this)">
+      <span class="bottom-tab-icon">📊</span><span class="bottom-tab-label">Planner</span>
+    </button>
+    <button class="bottom-tab-btn active" id="btab-tracker" onclick="switchTab('tracker',this)">
+      <span class="bottom-tab-icon">📝</span><span class="bottom-tab-label">Tracker</span>
+    </button>
+    <button class="bottom-tab-btn" id="btab-portfolio" onclick="switchTab('portfolio',this)">
+      <span class="bottom-tab-icon">📈</span><span class="bottom-tab-label">Portfolio</span>
+    </button>
+    <button class="bottom-tab-btn" id="btab-settings" onclick="switchTab('settings',this)">
+      <span class="bottom-tab-icon">⚙️</span><span class="bottom-tab-label">Settings</span>
+    </button>
+  </div>
+
+</div><!-- /page -->
 
 <!-- PORTFOLIO EDIT MODAL -->
 <div class="lock-popup-overlay" id="port-edit-modal" style="display:none;" onclick="if(event.target===this)closePortEdit()">
@@ -1701,10 +1677,12 @@ function closeLockPopup(){
   document.getElementById('planner-lock-popup').style.display = 'none';
   document.getElementById('planner-content').style.display = 'none';
   // go back to tracker tab
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bottom-tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelector('[onclick*="tracker"]').classList.add('active');
   document.getElementById('tab-tracker').classList.add('active');
+  const titleEl = document.getElementById('header-title-text');
+  if(titleEl) titleEl.textContent = 'Tracker';
 }
 function checkLock(){
   const val = document.getElementById('lock-input').value;
@@ -1930,9 +1908,6 @@ function toggleDark(){
   document.getElementById('dark-knob').style.background=on?'var(--blue)':'var(--border)';
   document.getElementById('dark-thumb').style.left=on?'23px':'3px';
   localStorage.setItem('darkMode',on?'1':'0');
-  // Re-apply theme accent for dark/light
-  const theme = localStorage.getItem('mek_theme')||'blue';
-  setTheme(theme, document.getElementById('theme-'+theme));
 }
 
 // CAT BUDGET SETTINGS
@@ -1968,7 +1943,6 @@ function renderTracker(){
   document.getElementById('tr-budget').textContent=fmt(budget);
   document.getElementById('tr-spent').textContent=fmt(spent);
   document.getElementById('tr-remain').textContent=fmt(remain);
-  document.getElementById('tr-remain').className='tracker-metric-val '+(remain<0?'neg':remain<budget*.2?'warn':'pos');
   document.getElementById('tr-bar-left').textContent='ใช้ไป '+Math.round(pct)+'%';
   document.getElementById('tr-bar-right').textContent='เหลือ '+fmt(Math.max(remain,0));
   const fill=document.getElementById('tr-bar-fill');
@@ -2119,11 +2093,15 @@ function renderTracker(){
   renderCatBudgetSettings();
 }
 
+const TAB_TITLES = {planner:'Planner', tracker:'Tracker', portfolio:'Portfolio', settings:'Settings'};
+
 function switchTab(name,btn){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bottom-tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
+  const titleEl = document.getElementById('header-title-text');
+  if(titleEl) titleEl.textContent = TAB_TITLES[name] || name;
   if(name==='tracker')loadEntries();
   if(name==='settings')renderCatBudgetSettings();
   if(name==='planner')initPlannerLock();
