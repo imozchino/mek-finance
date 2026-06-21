@@ -409,6 +409,23 @@ const STRINGS={
     ai_chip1:'หมวดไหนเยอะสุด',ai_ask1:'เดือนนี้ใช้หมวดไหนเยอะสุด',
     ai_chip2:'สรุปสถานะตอนนี้',ai_ask2:'สรุปสถานะการเงินตอนนี้ให้ฟังหน่อย',
     ai_chip3:'วิธีให้ถึงเป้า',ai_ask3:'ถ้าอยากให้ถึงเป้าปลายปีต้องทำไง',
+    // Planner dynamic
+    plan_pill_ok:'ถึงเป้า ✓',plan_pill_near:'ใกล้เป้า',plan_pill_below:'ไม่ถึงเป้า',
+    plan_per_month:'/เดือน',
+    plan_alert_ok_tpl:'✅ ถ้าคุมที่ {budget}/เดือน ปลาย ธ.ค. จะเหลือ {end} — เกินเป้า {diff} ครับ',
+    plan_alert_warn_tpl:'⚠️ ปลาย ธ.ค. คาดว่าจะเหลือ {end} — ต่ำกว่าเป้า {diff}',
+    plan_alert_bad_tpl:'🚨 ปลาย ธ.ค. คาดว่าจะเหลือแค่ {end} — ต่ำกว่าเป้ามาก',
+    // Planner static labels
+    fc_tennis:'ค่าเทนนิส',fc_airpod:'AirPod Pro 3 ผ่อน 0%',fc_dca:'DCA VOO',fc_net:'เงินสะสมสุทธิ/เดือน',
+    cf_item:'รายการ',cf_amount:'จำนวน',
+    cf_salary:'เงินเดือน net (27 ทุกเดือน)',cf_fixed_deduct:'หัก Fixed costs',
+    cf_fixed_sub:'เทนนิส + AirPod + DCA',cf_living_deduct:'หัก ค่าใช้จ่ายประจำวัน',cf_net_saving:'เหลือสะสม/เดือน',
+    tl_title:'Timeline มิ.ย.–ธ.ค. 2026',tl_month:'เดือน',tl_bill:'บิลก้อนใหญ่',tl_net:'สะสมสุทธิ',tl_balance:'ยอดปิด',
+    tl_kbank_alert:'📌 บิล KBANK ฿54,070 ครบกำหนด 25 มิ.ย. แต่เงินเดือนเข้า 27 มิ.ย. — ใช้ SCB ฿68k จ่ายก่อนได้ครับ',
+    ye_current_balance:'เงินในบัญชีตอนนี้ (10 มิ.ย.)',ye_net_savings:'เงินสะสมสุทธิ 7 เดือน',
+    ye_big_bills:'บิลก้อนใหญ่ทั้งปี',ye_big_bills_sub:'บัตร KBANK + SCB + เทอม ส.ค. + เทอม ธ.ค.',ye_final:'ยอดคงเหลือปลาย ธ.ค.',
+    // Month dropdown
+    m6:'มิถุนายน 2026',m7:'กรกฎาคม 2026',m8:'สิงหาคม 2026',m9:'กันยายน 2026',m10:'ตุลาคม 2026',m11:'พฤศจิกายน 2026',m12:'ธันวาคม 2026',
   },
   en:{
     tab_planner:'Planner',tab_tracker:'Tracker',tab_portfolio:'Portfolio',tab_settings:'Settings',
@@ -473,6 +490,23 @@ const STRINGS={
     ai_chip1:'Top category',ai_ask1:'Which category did I spend most this month?',
     ai_chip2:'Financial summary',ai_ask2:'Give me a summary of my finances now',
     ai_chip3:'Hit my target',ai_ask3:'What do I need to do to reach my year-end goal?',
+    // Planner dynamic
+    plan_pill_ok:'On Target ✓',plan_pill_near:'Near Target',plan_pill_below:'Below Target',
+    plan_per_month:'/month',
+    plan_alert_ok_tpl:'✅ At {budget}/month, Dec balance = {end} — {diff} above target ✓',
+    plan_alert_warn_tpl:'⚠️ Dec est. {end} — {diff} below target',
+    plan_alert_bad_tpl:'🚨 Dec est. only {end} — well below target',
+    // Planner static labels
+    fc_tennis:'Tennis',fc_airpod:'AirPod Pro 3 Installment',fc_dca:'DCA VOO',fc_net:'Net Savings/Month',
+    cf_item:'Item',cf_amount:'Amount',
+    cf_salary:'Net Salary (27th monthly)',cf_fixed_deduct:'Deduct Fixed Costs',
+    cf_fixed_sub:'Tennis + AirPod + DCA',cf_living_deduct:'Deduct Living Expenses',cf_net_saving:'Net Monthly Savings',
+    tl_title:'Timeline Jun–Dec 2026',tl_month:'Month',tl_bill:'Big Bills',tl_net:'Net',tl_balance:'Closing',
+    tl_kbank_alert:'📌 KBANK bill ฿54,070 due Jun 25, salary arrives Jun 27 — use SCB ฿68k to pay first',
+    ye_current_balance:'Current Balance (Jun 10)',ye_net_savings:'7-Month Net Savings',
+    ye_big_bills:'Annual Big Bills',ye_big_bills_sub:'KBANK + SCB cards + Aug tuition + Dec tuition',ye_final:'Dec Year-End Balance',
+    // Month dropdown
+    m6:'June 2026',m7:'July 2026',m8:'August 2026',m9:'September 2026',m10:'October 2026',m11:'November 2026',m12:'December 2026',
   }
 };
 
@@ -515,20 +549,33 @@ function updateLangBtns(){
   });
 }
 
+function renderMonthDropdown(){
+  var sel=document.getElementById('view-month');
+  if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML=[6,7,8,9,10,11,12].map(function(m){
+    return '<option value="'+m+'">'+t('m'+m)+'</option>';
+  }).join('');
+  if(cur)sel.value=cur;
+}
+
 function setLang(lang){
   currentLang=lang;
   localStorage.setItem('mek_lang',lang);
   applyLang();
   updateLangBtns();
+  if(typeof renderMonthDropdown==='function')renderMonthDropdown();
   if(typeof renderTracker==='function')renderTracker();
   if(typeof renderCatBudgetSettings==='function')renderCatBudgetSettings();
   if(typeof renderPortfolio==='function')renderPortfolio();
+  if(typeof update==='function')update();
 }
 
 function applyLang(){
   document.querySelectorAll('[data-i18n]').forEach(function(el){el.textContent=t(el.getAttribute('data-i18n'));});
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){el.placeholder=t(el.getAttribute('data-i18n-placeholder'));});
   renderCatSelects();
+  renderMonthDropdown();
   updateLangBtns();
   var nb=document.getElementById('notif-banner');if(nb&&nb.style.display!=='none')nb.textContent=t('notif_over80');
   var aih=document.querySelector('.ai-header-title');if(aih)aih.textContent=t('ai_title');
@@ -1411,18 +1458,18 @@ function aiShowConfirm(entry){
   <div class="tab-panel" id="tab-planner"><div id="planner-content" style="display:none;">
 
     <div class="card">
-      <div class="card-title">ปรับตัวแปร</div>
+      <div class="card-title" data-i18n="planner_sliders_title">ปรับตัวแปร</div>
       <div class="sliders-grid">
         <div>
-          <div class="slider-row"><div><div class="slider-label">ค่าใช้จ่ายชีวิตประจำวัน</div><div class="slider-desc">อาหาร ของใช้ สังสรรค์ (ไม่รวมเทนนิส/DCA)</div></div><div class="slider-val" id="living-display">฿17,500</div></div>
+          <div class="slider-row"><div><div class="slider-label" data-i18n="planner_living_label">ค่าใช้จ่ายชีวิตประจำวัน</div><div class="slider-desc" data-i18n="planner_living_desc">อาหาร ของใช้ สังสรรค์ (ไม่รวมเทนนิส/DCA)</div></div><div class="slider-val" id="living-display">฿17,500</div></div>
           <input type="range" id="living-slider" min="5000" max="30000" step="500" value="17500" oninput="update()"/>
         </div>
         <div>
-          <div class="slider-row"><div><div class="slider-label">เป้าเงินเหลือปลาย ธ.ค.</div><div class="slider-desc">ยอดขั้นต่ำที่อยากมีในบัญชี</div></div><div class="slider-val" id="target-display">฿100,000</div></div>
+          <div class="slider-row"><div><div class="slider-label" data-i18n="planner_target_label">เป้าเงินเหลือปลาย ธ.ค.</div><div class="slider-desc" data-i18n="planner_target_desc">ยอดขั้นต่ำที่อยากมีในบัญชี</div></div><div class="slider-val" id="target-display">฿100,000</div></div>
           <input type="range" id="target-slider" min="50000" max="300000" step="10000" value="100000" oninput="updateFromTarget()"/>
         </div>
         <div>
-          <div class="slider-row"><div><div class="slider-label">DCA VOO ต่อเดือน</div><div class="slider-desc">ลงทุนอัตโนมัติทุกวันที่ 1</div></div><div class="slider-val" id="dca-display">฿5,000</div></div>
+          <div class="slider-row"><div><div class="slider-label" data-i18n="planner_dca_label">DCA VOO ต่อเดือน</div><div class="slider-desc" data-i18n="planner_dca_desc">ลงทุนอัตโนมัติทุกวันที่ 1</div></div><div class="slider-val" id="dca-display">฿5,000</div></div>
           <input type="range" id="dca-slider" min="0" max="10000" step="500" value="5000" oninput="update()"/>
         </div>
       </div>
@@ -1430,7 +1477,7 @@ function aiShowConfirm(entry){
 
     <div class="card" style="text-align:center;">
       <div class="result-hero">
-        <div class="result-label">งบชีวิตประจำวันที่ตั้งไว้</div>
+        <div class="result-label" data-i18n="daily_budget_label">งบชีวิตประจำวันที่ตั้งไว้</div>
         <div class="result-amount good" id="result-amount">฿17,500</div>
         <div class="result-daily" id="result-daily">วันละประมาณ ฿583</div>
         <div class="pill ok" id="result-pill"><div class="pill-dot"></div><span id="pill-text">พอดีตามแผน</span></div>
@@ -1443,40 +1490,40 @@ function aiShowConfirm(entry){
     </div>
 
     <div class="card">
-      <div class="card-title">Fixed Costs ที่หักออกแล้ว</div>
+      <div class="card-title" data-i18n="fixed_costs_title">Fixed Costs ที่หักออกแล้ว</div>
       <div class="fixed-grid">
-        <div class="fixed-item"><div class="fixed-item-label">ค่าเทนนิส</div><div class="fixed-item-val">฿3,600/เดือน</div></div>
-        <div class="fixed-item"><div class="fixed-item-label">AirPod Pro 3 ผ่อน 0%</div><div class="fixed-item-val">฿849/เดือน</div></div>
-        <div class="fixed-item"><div class="fixed-item-label">DCA VOO</div><div class="fixed-item-val" id="fixed-dca">฿5,000/เดือน</div></div>
-        <div class="fixed-item"><div class="fixed-item-label">เงินสะสมสุทธิ/เดือน</div><div class="fixed-item-val" id="fixed-net">฿21,018</div></div>
+        <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_tennis">ค่าเทนนิส</div><div class="fixed-item-val">฿3,600<span data-i18n="plan_per_month">/เดือน</span></div></div>
+        <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_airpod">AirPod Pro 3 ผ่อน 0%</div><div class="fixed-item-val">฿849<span data-i18n="plan_per_month">/เดือน</span></div></div>
+        <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_dca">DCA VOO</div><div class="fixed-item-val" id="fixed-dca">฿5,000/เดือน</div></div>
+        <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_net">เงินสะสมสุทธิ/เดือน</div><div class="fixed-item-val" id="fixed-net">฿21,018</div></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Cashflow สรุป</div>
+      <div class="card-title" data-i18n="cashflow_title">Cashflow สรุป</div>
       <table class="table">
-        <tr><th>รายการ</th><th>จำนวน</th></tr>
-        <tr><td>เงินเดือน net (27 ทุกเดือน)</td><td class="pos">+฿47,967</td></tr>
-        <tr><td><div>หัก Fixed costs</div><div class="sub-label">เทนนิส + AirPod + DCA</div></td><td class="neg" id="cf-fixed">−฿9,449</td></tr>
-        <tr><td>หัก ค่าใช้จ่ายประจำวัน</td><td class="neg" id="cf-living">−฿17,500</td></tr>
-        <tr class="total"><td>เหลือสะสม/เดือน</td><td id="cf-net" class="pos">฿21,018</td></tr>
+        <tr><th data-i18n="cf_item">รายการ</th><th data-i18n="cf_amount">จำนวน</th></tr>
+        <tr><td data-i18n="cf_salary">เงินเดือน net (27 ทุกเดือน)</td><td class="pos">+฿47,967</td></tr>
+        <tr><td><div data-i18n="cf_fixed_deduct">หัก Fixed costs</div><div class="sub-label" data-i18n="cf_fixed_sub">เทนนิส + AirPod + DCA</div></td><td class="neg" id="cf-fixed">−฿9,449</td></tr>
+        <tr><td data-i18n="cf_living_deduct">หัก ค่าใช้จ่ายประจำวัน</td><td class="neg" id="cf-living">−฿17,500</td></tr>
+        <tr class="total"><td data-i18n="cf_net_saving">เหลือสะสม/เดือน</td><td id="cf-net" class="pos">฿21,018</td></tr>
       </table>
     </div>
 
     <div class="card">
-      <div class="card-title">Timeline มิ.ย.–ธ.ค. 2026</div>
-      <div class="tl-row hdr"><div>เดือน</div><div>บิลก้อนใหญ่</div><div>สะสมสุทธิ</div><div style="text-align:right">ยอดปิด</div></div>
+      <div class="card-title" data-i18n="tl_title">Timeline มิ.ย.–ธ.ค. 2026</div>
+      <div class="tl-row hdr"><div data-i18n="tl_month">เดือน</div><div data-i18n="tl_bill">บิลก้อนใหญ่</div><div data-i18n="tl_net">สะสมสุทธิ</div><div style="text-align:right" data-i18n="tl_balance">ยอดปิด</div></div>
       <div id="timeline-body"></div>
-      <div class="alert info" style="margin-top:14px;">📌 บิล KBANK ฿54,070 ครบกำหนด 25 มิ.ย. แต่เงินเดือนเข้า 27 มิ.ย. — ใช้ SCB ฿68k จ่ายก่อนได้ครับ</div>
+      <div class="alert info" style="margin-top:14px;" data-i18n="tl_kbank_alert">📌 บิล KBANK ฿54,070 ครบกำหนด 25 มิ.ย. แต่เงินเดือนเข้า 27 มิ.ย. — ใช้ SCB ฿68k จ่ายก่อนได้ครับ</div>
     </div>
 
     <div class="card">
-      <div class="card-title">ยอดคาดการณ์ปลาย ธ.ค. 2026</div>
+      <div class="card-title" data-i18n="yearend_title">ยอดคาดการณ์ปลาย ธ.ค. 2026</div>
       <table class="table">
-        <tr><td>เงินในบัญชีตอนนี้ (10 มิ.ย.)</td><td class="pos">+฿186,661</td></tr>
-        <tr><td>เงินสะสมสุทธิ 7 เดือน</td><td class="pos" id="ye-savings">+฿147,126</td></tr>
-        <tr><td><div>บิลก้อนใหญ่ทั้งปี</div><div class="sub-label">บัตร KBANK + SCB + เทอม ส.ค. + เทอม ธ.ค.</div></td><td class="neg">−฿233,311</td></tr>
-        <tr class="total"><td>ยอดคงเหลือปลาย ธ.ค.</td><td id="ye-total" class="pos">฿100,476</td></tr>
+        <tr><td data-i18n="ye_current_balance">เงินในบัญชีตอนนี้ (10 มิ.ย.)</td><td class="pos">+฿186,661</td></tr>
+        <tr><td data-i18n="ye_net_savings">เงินสะสมสุทธิ 7 เดือน</td><td class="pos" id="ye-savings">+฿147,126</td></tr>
+        <tr><td><div data-i18n="ye_big_bills">บิลก้อนใหญ่ทั้งปี</div><div class="sub-label" data-i18n="ye_big_bills_sub">บัตร KBANK + SCB + เทอม ส.ค. + เทอม ธ.ค.</div></td><td class="neg">−฿233,311</td></tr>
+        <tr class="total"><td data-i18n="ye_final">ยอดคงเหลือปลาย ธ.ค.</td><td id="ye-total" class="pos">฿100,476</td></tr>
       </table>
       <div class="progress-wrap">
         <div class="progress-label"><span>฿0</span><span id="ye-progress-label">฿100,476 / เป้า ฿100,000</span><span>฿200,000</span></div>
@@ -1982,8 +2029,8 @@ function update(){
   const net=SALARY-fixed-living;
   document.getElementById('result-amount').textContent=fmt(living);
   document.getElementById('result-daily').textContent=tpl('day_approx_tpl',{v:fmt(Math.round(living/30))});
-  document.getElementById('progress-mid').textContent=fmt(living)+'/เดือน';
-  document.getElementById('fixed-dca').textContent=fmt(dca)+'/เดือน';
+  document.getElementById('progress-mid').textContent=fmt(living)+t('plan_per_month');
+  document.getElementById('fixed-dca').textContent=fmt(dca)+t('plan_per_month');
   document.getElementById('fixed-net').textContent=fmt(net);
   document.getElementById('cf-fixed').textContent='−฿'+fixed.toLocaleString('th-TH');
   document.getElementById('cf-living').textContent='−฿'+living.toLocaleString('th-TH');
@@ -2009,11 +2056,11 @@ function update(){
   const yePct=Math.min(Math.max(yearEnd/200000*100,0),100);
   document.getElementById('ye-progress-fill').style.width=yePct+'%';
   document.getElementById('ye-progress-fill').style.background=yearEnd>=target?'#1A7A56':yearEnd>=0?'#9A6200':'#C0392B';
-  document.getElementById('ye-progress-label').textContent=fmt(yearEnd)+' / เป้า '+fmt(target);
+  document.getElementById('ye-progress-label').textContent=fmt(yearEnd)+' / '+t('planner_target_label')+' '+fmt(target);
   const amtEl=document.getElementById('result-amount'),pillEl=document.getElementById('result-pill'),pillTxt=document.getElementById('pill-text'),alertEl=document.getElementById('main-alert'),pfill=document.getElementById('progress-fill');
-  if(diff>=0){amtEl.className='result-amount good';pillEl.className='pill good';pillTxt.textContent='ถึงเป้า ✓';alertEl.className='alert ok';alertEl.textContent='✅ ถ้าคุมที่ '+fmt(living)+'/เดือน ปลาย ธ.ค. จะเหลือ '+fmt(yearEnd)+' — เกินเป้า '+fmt(diff)+' ครับ';pfill.style.background='#1A7A56';}
-  else if(diff>-30000){amtEl.className='result-amount ok';pillEl.className='pill ok';pillTxt.textContent='ใกล้เป้า';alertEl.className='alert warn';alertEl.textContent='⚠️ ปลาย ธ.ค. คาดว่าจะเหลือ '+fmt(yearEnd)+' — ต่ำกว่าเป้า '+fmt(Math.abs(diff));pfill.style.background='#9A6200';}
-  else{amtEl.className='result-amount tight';pillEl.className='pill tight';pillTxt.textContent='ไม่ถึงเป้า';alertEl.className='alert bad';alertEl.textContent='🚨 ปลาย ธ.ค. คาดว่าจะเหลือแค่ '+fmt(yearEnd)+' — ต่ำกว่าเป้ามาก';pfill.style.background='#C0392B';}
+  if(diff>=0){amtEl.className='result-amount good';pillEl.className='pill good';pillTxt.textContent=t('plan_pill_ok');alertEl.className='alert ok';alertEl.textContent=tpl('plan_alert_ok_tpl',{budget:fmt(living),end:fmt(yearEnd),diff:fmt(diff)});pfill.style.background='#1A7A56';}
+  else if(diff>-30000){amtEl.className='result-amount ok';pillEl.className='pill ok';pillTxt.textContent=t('plan_pill_near');alertEl.className='alert warn';alertEl.textContent=tpl('plan_alert_warn_tpl',{end:fmt(yearEnd),diff:fmt(Math.abs(diff))});pfill.style.background='#9A6200';}
+  else{amtEl.className='result-amount tight';pillEl.className='pill tight';pillTxt.textContent=t('plan_pill_below');alertEl.className='alert bad';alertEl.textContent=tpl('plan_alert_bad_tpl',{end:fmt(yearEnd)});pfill.style.background='#C0392B';}
   window._budget=living;
   localStorage.setItem('mek_budget', living);
   renderCatBudgetSettings();
@@ -2346,6 +2393,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   initProfilePic();
   applyLang();
   updateLangBtns();
+  renderMonthDropdown();
   // PWA install hint
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._pwaPrompt=e;});
 });
