@@ -1976,9 +1976,16 @@ function renderTracker(){
   const daysLeft=isCurrent?new Date(2026,viewMonth,0).getDate()-today.getDate()+1:0;
   const dailyBud=daysLeft>0&&remain>0?Math.floor(remain/daysLeft):0;
   const dvEl=document.getElementById('tr-daily-val'),ddEl=document.getElementById('tr-daily-desc');
-  if(daysLeft>0&&remain>0){dvEl.textContent=fmt(dailyBud);ddEl.textContent='เหลืออีก '+daysLeft+' วัน\n('+today.getDate()+'–'+new Date(2026,viewMonth,0).getDate()+' '+MONTH_NAMES[viewMonth]+')';ddEl.style.whiteSpace='pre-line';}
-  else if(remain<=0){dvEl.textContent='฿0';ddEl.textContent='งบเดือนนี้หมดแล้ว';}
-  else{dvEl.textContent='—';ddEl.textContent='ดูได้เฉพาะเดือนปัจจุบัน';}
+  if(isCurrent&&daysLeft>0&&remain>0){dvEl.textContent=fmt(dailyBud);ddEl.textContent='เหลืออีก '+daysLeft+' วัน\n('+today.getDate()+'–'+new Date(2026,viewMonth,0).getDate()+' '+MONTH_NAMES[viewMonth]+')';ddEl.style.whiteSpace='pre-line';}
+  else if(isCurrent&&remain<=0){dvEl.textContent='฿0';ddEl.textContent='งบเดือนนี้หมดแล้ว';}
+  else{
+    // Non-current month: show flat average (budget / total days in that month)
+    const totalDaysInMonth=new Date(2026,viewMonth,0).getDate();
+    const flatDaily=totalDaysInMonth>0?Math.floor(budget/totalDaysInMonth):0;
+    dvEl.textContent=fmt(flatDaily);
+    ddEl.textContent='เฉลี่ยทั้งเดือน ('+totalDaysInMonth+' วัน)';
+    ddEl.style.whiteSpace='pre-line';
+  }
 
   // Entry list
   const container=document.getElementById('entry-list-container');
