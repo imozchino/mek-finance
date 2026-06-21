@@ -399,6 +399,9 @@ const STRINGS={
     port_disclaimer:'📌 ราคาหุ้น delay ~15 นาที จาก Yahoo Finance — ไม่เหมาะสำหรับการซื้อขาย ใช้เพื่อติดตาม portfolio เท่านั้นครับ',
     port_confirm_del:'ลบ {t}?',port_fill:'กรุณากรอกข้อมูลให้ครบครับ',
     port_edit_btn:'✏️ แก้',port_del_btn:'🗑 ลบ',
+    port_donut_th:'🇹🇭 หุ้นไทย',port_donut_us:'🇺🇸 หุ้น US',
+    new_name_ph:'ชื่อ เช่น ธนาคารกสิกร',new_shares_ph:'จำนวนหุ้น',
+    shares_unit:'หุ้น',market_th_opt:'🇹🇭 หุ้นไทย (SET)',market_us_opt:'🇺🇸 หุ้น US',
     lock_title:'Planner ถูกล็อกไว้',lock_sub:'ใส่รหัสผ่านเพื่อดูข้อมูล',
     lock_placeholder:'รหัสผ่าน',lock_btn:'ปลดล็อก',lock_cancel:'ยกเลิก',
     lock_wrong:'❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่',
@@ -482,6 +485,9 @@ const STRINGS={
     port_disclaimer:'📌 Prices delayed ~15 min from Yahoo Finance. For tracking only — not for trading.',
     port_confirm_del:'Remove {t}?',port_fill:'Please fill in all fields.',
     port_edit_btn:'✏️ Edit',port_del_btn:'🗑 Remove',
+    port_donut_th:'🇹🇭 Thai Stocks',port_donut_us:'🇺🇸 US Stocks',
+    new_name_ph:'Name e.g. Kasikorn Bank',new_shares_ph:'Number of shares',
+    shares_unit:'shares',market_th_opt:'🇹🇭 Thai Stocks (SET)',market_us_opt:'🇺🇸 US Stocks',
     lock_title:'Planner is Locked',lock_sub:'Enter password to view',
     lock_placeholder:'Password',lock_btn:'Unlock',lock_cancel:'Cancel',
     lock_wrong:'❌ Incorrect password. Please try again.',
@@ -563,6 +569,15 @@ function renderMonthDropdown(){
   if(cur)sel.value=cur;
 }
 
+function renderMarketSelect(){
+  var sel=document.getElementById('new-market');
+  if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML='<option value="TH">'+t('market_th_opt')+'</option>'
+               +'<option value="US">'+t('market_us_opt')+'</option>';
+  if(cur)sel.value=cur;
+}
+
 function setLang(lang){
   currentLang=lang;
   localStorage.setItem('mek_lang',lang);
@@ -580,6 +595,7 @@ function applyLang(){
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){el.placeholder=t(el.getAttribute('data-i18n-placeholder'));});
   renderCatSelects();
   renderMonthDropdown();
+  renderMarketSelect();
   updateLangBtns();
   var nb=document.getElementById('notif-banner');if(nb&&nb.style.display!=='none')nb.textContent=t('notif_over80');
   var aih=document.querySelector('.ai-header-title');if(aih)aih.textContent=t('ai_title');
@@ -1063,7 +1079,7 @@ function renderPortfolio(){
     editEl.innerHTML = holdings.map(function(h,i){
       var currency = h.market==='US'?'$':'฿';
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;gap:8px;">'
-        +'<div style="flex:1;"><span style="font-weight:600;">'+h.ticker+'</span> <span style="color:var(--text-3);">'+h.shares+' หุ้น @ '+currency+h.avgCost+'</span></div>'
+        +'<div style="flex:1;"><span style="font-weight:600;">'+h.ticker+'</span> <span style="color:var(--text-3);">'+h.shares+' '+t('shares_unit')+' @ '+currency+h.avgCost+'</span></div>'
         +'<div style="display:flex;gap:6px;">'
         +'<button class="port-edit-btn" style="background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:4px 8px;font-size:12px;" onclick="openPortEdit('+i+')">'+t('port_edit_btn')+'</button>'
         +'<button class="port-edit-btn" style="background:var(--red-bg);color:var(--red);border-radius:6px;padding:4px 8px;font-size:12px;" onclick="removeHolding('+i+')">'+t('port_del_btn')+'</button>'
@@ -1732,7 +1748,7 @@ function aiShowConfirm(entry){
           <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="port-total-cost">—</div>
         </div>
         <div style="flex:1;">
-          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">กำไร/ขาดทุน</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;" data-i18n="port_pnl">กำไร/ขาดทุน</div>
           <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="port-total-pnl">—</div>
         </div>
       </div>
@@ -1766,14 +1782,14 @@ function aiShowConfirm(entry){
       <div class="port-section-title">Portfolio Allocation</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div>
-          <div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:6px;">🇹🇭 หุ้นไทย</div>
+          <div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:6px;" data-i18n="port_donut_th">🇹🇭 หุ้นไทย</div>
           <div style="position:relative;width:100%;">
             <svg id="donut-th" viewBox="0 0 120 120" style="width:100%;max-width:150px;display:block;margin:0 auto;"></svg>
           </div>
           <div id="legend-th" style="margin-top:8px;"></div>
         </div>
         <div>
-          <div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:6px;">🇺🇸 หุ้น US</div>
+          <div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:6px;" data-i18n="port_donut_us">🇺🇸 หุ้น US</div>
           <div style="position:relative;width:100%;">
             <svg id="donut-us" viewBox="0 0 120 120" style="width:100%;max-width:150px;display:block;margin:0 auto;"></svg>
           </div>
@@ -1803,8 +1819,8 @@ function aiShowConfirm(entry){
         <div class="port-section-title" style="margin-top:0;" data-i18n="port_add_title">เพิ่มหุ้นใหม่</div>
         <div class="port-add-row">
           <input class="port-input" id="new-ticker" placeholder="TICKER" style="text-transform:uppercase;"/>
-          <input class="port-input" id="new-name" placeholder="ชื่อ เช่น ธนาคารกสิกร"/>
-          <input class="port-input" type="number" id="new-shares" placeholder="จำนวนหุ้น"/>
+          <input class="port-input" id="new-name" data-i18n-placeholder="new_name_ph" placeholder="ชื่อ เช่น ธนาคารกสิกร"/>
+          <input class="port-input" type="number" id="new-shares" data-i18n-placeholder="new_shares_ph" placeholder="จำนวนหุ้น"/>
           <input class="port-input" type="number" id="new-avg" placeholder="Avg Cost"/>
           <button class="add-btn" onclick="addHolding()" data-i18n="add_btn">+ เพิ่ม</button>
         </div>
