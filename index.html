@@ -422,6 +422,8 @@ const STRINGS={
     cf_fixed_sub:'เทนนิส + AirPod + DCA',cf_living_deduct:'หัก ค่าใช้จ่ายประจำวัน',cf_net_saving:'เหลือสะสม/เดือน',
     tl_title:'Timeline มิ.ย.–ธ.ค. 2026',tl_month:'เดือน',tl_bill:'บิลก้อนใหญ่',tl_net:'สะสมสุทธิ',tl_balance:'ยอดปิด',
     tl_kbank_alert:'📌 บิล KBANK ฿54,070 ครบกำหนด 25 มิ.ย. แต่เงินเดือนเข้า 27 มิ.ย. — ใช้ SCB ฿68k จ่ายก่อนได้ครับ',
+    bill_jun:'บัตร KBANK + คืนเพื่อน',bill_jul:'บัตร SCB + AirPod งวด 2',
+    bill_aug:'ค่าเทอม ปี 2 เทอม 1',bill_dec:'ค่าเทอม ปี 2 เทอม 2',
     ye_current_balance:'เงินในบัญชีตอนนี้ (10 มิ.ย.)',ye_net_savings:'เงินสะสมสุทธิ 7 เดือน',
     ye_big_bills:'บิลก้อนใหญ่ทั้งปี',ye_big_bills_sub:'บัตร KBANK + SCB + เทอม ส.ค. + เทอม ธ.ค.',ye_final:'ยอดคงเหลือปลาย ธ.ค.',
     // Month dropdown
@@ -503,6 +505,8 @@ const STRINGS={
     cf_fixed_sub:'Tennis + AirPod + DCA',cf_living_deduct:'Deduct Living Expenses',cf_net_saving:'Net Monthly Savings',
     tl_title:'Timeline Jun–Dec 2026',tl_month:'Month',tl_bill:'Big Bills',tl_net:'Net',tl_balance:'Closing',
     tl_kbank_alert:'📌 KBANK bill ฿54,070 due Jun 25, salary arrives Jun 27 — use SCB ฿68k to pay first',
+    bill_jun:'KBANK card + repay friend',bill_jul:'SCB card + AirPod 2nd installment',
+    bill_aug:'Year 2 Semester 1 tuition',bill_dec:'Year 2 Semester 2 tuition',
     ye_current_balance:'Current Balance (Jun 10)',ye_net_savings:'7-Month Net Savings',
     ye_big_bills:'Annual Big Bills',ye_big_bills_sub:'KBANK + SCB cards + Aug tuition + Dec tuition',ye_final:'Dec Year-End Balance',
     // Month dropdown
@@ -1976,13 +1980,13 @@ const Q='?apikey='+SUPABASE_KEY;
 // PLANNER
 const SALARY=47967,TENNIS=3600,AIRPOD=849,START=186661,MONTHS=7;
 const BIG_BILLS=[
-  {month:'มิถุนายน',bill:55221,billLabel:'บัตร KBANK + คืนเพื่อน'},
-  {month:'กรกฎาคม',bill:15276,billLabel:'บัตร SCB + AirPod งวด 2'},
-  {month:'สิงหาคม',bill:81500,billLabel:'ค่าเทอม ปี 2 เทอม 1'},
-  {month:'กันยายน',bill:0,billLabel:''},
-  {month:'ตุลาคม',bill:0,billLabel:''},
-  {month:'พฤศจิกายน',bill:0,billLabel:''},
-  {month:'ธันวาคม',bill:81500,billLabel:'ค่าเทอม ปี 2 เทอม 2'},
+  {month:'มิถุนายน',bill:55221,labelKey:'bill_jun'},
+  {month:'กรกฎาคม',bill:15276,labelKey:'bill_jul'},
+  {month:'สิงหาคม',bill:81500,labelKey:'bill_aug'},
+  {month:'กันยายน',bill:0,labelKey:''},
+  {month:'ตุลาคม',bill:0,labelKey:''},
+  {month:'พฤศจิกายน',bill:0,labelKey:''},
+  {month:'ธันวาคม',bill:81500,labelKey:'bill_dec'},
 ];
 const CAT_COLORS={อาหาร:'#1A7A56',เครื่องดื่ม:'#6B4C9A',เดินทาง:'#1B5FA8',ช้อปปิ้ง:'#7B3FA8',สังสรรค์:'#9A6200',สุขภาพ:'#C0392B','บิล/สมาชิก':'#2E86AB',การศึกษา:'#5A4FCF',ออกกำลังกาย:'#16A085',อื่นๆ:'#6B6B65'};
 const MONTH_NAMES=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -2042,7 +2046,7 @@ function update(){
   BIG_BILLS.forEach(m=>{
     bal+=net-m.bill;
     const cls=bal<60000?'crit':bal<100000?'low':'safe';
-    const bHtml=m.bill>0?'<div style="color:var(--red)">−฿'+m.bill.toLocaleString()+'</div><div class="tl-bill">'+m.billLabel+'</div>':'<span style="color:var(--text-3)">—</span>';
+    const bHtml=m.bill>0?'<div style="color:var(--red)">−฿'+m.bill.toLocaleString()+'</div><div class="tl-bill">'+t(m.labelKey)+'</div>':'<span style="color:var(--text-3)">—</span>';
     const nHtml=net>=0?'<span class="pos">+฿'+net.toLocaleString()+'</span>':'<span class="neg">−฿'+Math.abs(net).toLocaleString()+'</span>';
     html+='<div class="tl-row '+cls+'"><div class="tl-month">'+(currentLang==='en'?(MONTHS_TH_EN[m.month]||m.month):m.month)+'</div><div>'+bHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+fmt(bal)+'</div></div>';
   });
