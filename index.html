@@ -1481,15 +1481,15 @@ function aiShowConfirm(entry){
       <div class="card-title" data-i18n="planner_sliders_title">ปรับตัวแปร</div>
       <div class="sliders-grid">
         <div>
-          <div class="slider-row"><div><div class="slider-label" data-i18n="planner_living_label">ค่าใช้จ่ายชีวิตประจำวัน</div><div class="slider-desc" data-i18n="planner_living_desc">อาหาร ของใช้ สังสรรค์ (ไม่รวมเทนนิส/DCA)</div></div><div class="slider-val" id="living-display">฿17,500</div></div>
+          <div class="slider-row"><div><div class="slider-label" data-i18n="planner_living_label">ค่าใช้จ่ายชีวิตประจำวัน</div><div class="slider-desc" data-i18n="planner_living_desc">อาหาร ของใช้ สังสรรค์ (ไม่รวมเทนนิส/DCA)</div></div><div class="slider-val" id="living-display"></div></div>
           <input type="range" id="living-slider" min="5000" max="30000" step="500" value="17500" oninput="update()"/>
         </div>
         <div>
-          <div class="slider-row"><div><div class="slider-label" data-i18n="planner_target_label">เป้าเงินเหลือปลาย ธ.ค.</div><div class="slider-desc" data-i18n="planner_target_desc">ยอดขั้นต่ำที่อยากมีในบัญชี</div></div><div class="slider-val" id="target-display">฿100,000</div></div>
+          <div class="slider-row"><div><div class="slider-label" data-i18n="planner_target_label">เป้าเงินเหลือปลาย ธ.ค.</div><div class="slider-desc" data-i18n="planner_target_desc">ยอดขั้นต่ำที่อยากมีในบัญชี</div></div><div class="slider-val" id="target-display"></div></div>
           <input type="range" id="target-slider" min="50000" max="300000" step="10000" value="100000" oninput="updateFromTarget()"/>
         </div>
         <div>
-          <div class="slider-row"><div><div class="slider-label" data-i18n="planner_dca_label">DCA VOO ต่อเดือน</div><div class="slider-desc" data-i18n="planner_dca_desc">ลงทุนอัตโนมัติทุกวันที่ 1</div></div><div class="slider-val" id="dca-display">฿5,000</div></div>
+          <div class="slider-row"><div><div class="slider-label" data-i18n="planner_dca_label">DCA VOO ต่อเดือน</div><div class="slider-desc" data-i18n="planner_dca_desc">ลงทุนอัตโนมัติทุกวันที่ 1</div></div><div class="slider-val" id="dca-display"></div></div>
           <input type="range" id="dca-slider" min="0" max="10000" step="500" value="5000" oninput="update()"/>
         </div>
       </div>
@@ -1498,15 +1498,15 @@ function aiShowConfirm(entry){
     <div class="card" style="text-align:center;">
       <div class="result-hero">
         <div class="result-label" data-i18n="daily_budget_label">งบชีวิตประจำวันที่ตั้งไว้</div>
-        <div class="result-amount good" id="result-amount">฿17,500</div>
-        <div class="result-daily" id="result-daily">วันละประมาณ ฿583</div>
-        <div class="pill ok" id="result-pill"><div class="pill-dot"></div><span id="pill-text">พอดีตามแผน</span></div>
+        <div class="result-amount good" id="result-amount"></div>
+        <div class="result-daily" id="result-daily"></div>
+        <div class="pill ok" id="result-pill"><div class="pill-dot"></div><span id="pill-text"></span></div>
       </div>
       <div class="progress-wrap">
-        <div class="progress-label"><span>฿0</span><span id="progress-mid">฿17,500/เดือน</span><span>฿30,000</span></div>
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:58%;background:#9A6200;"></div></div>
+        <div class="progress-label"><span>฿0</span><span id="progress-mid"></span><span>฿30,000</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%;"></div></div>
       </div>
-      <div class="alert ok" id="main-alert">✅ ถ้าคุมที่ ฿17,500/เดือน ปลาย ธ.ค. จะเหลือประมาณ ฿100,476 ตามเป้าครับ</div>
+      <div class="alert ok" id="main-alert"></div>
     </div>
 
     <div class="card">
@@ -1514,8 +1514,8 @@ function aiShowConfirm(entry){
       <div class="fixed-grid">
         <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_tennis">ค่าเทนนิส</div><div class="fixed-item-val">฿3,600<span data-i18n="plan_per_month">/เดือน</span></div></div>
         <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_airpod">AirPod Pro 3 ผ่อน 0%</div><div class="fixed-item-val">฿849<span data-i18n="plan_per_month">/เดือน</span></div></div>
-        <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_dca">DCA VOO</div><div class="fixed-item-val" id="fixed-dca">฿5,000/เดือน</div></div>
-        <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_net">เงินสะสมสุทธิ/เดือน</div><div class="fixed-item-val" id="fixed-net">฿21,018</div></div>
+        <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_dca">DCA VOO</div><div class="fixed-item-val" id="fixed-dca"></div></div>
+        <div class="fixed-item"><div class="fixed-item-label" data-i18n="fc_net">เงินสะสมสุทธิ/เดือน</div><div class="fixed-item-val" id="fixed-net"></div></div>
       </div>
     </div>
 
@@ -1524,9 +1524,9 @@ function aiShowConfirm(entry){
       <table class="table">
         <tr><th data-i18n="cf_item">รายการ</th><th data-i18n="cf_amount">จำนวน</th></tr>
         <tr><td data-i18n="cf_salary">เงินเดือน net (27 ทุกเดือน)</td><td class="pos">+฿47,967</td></tr>
-        <tr><td><div data-i18n="cf_fixed_deduct">หัก Fixed costs</div><div class="sub-label" data-i18n="cf_fixed_sub">เทนนิส + AirPod + DCA</div></td><td class="neg" id="cf-fixed">−฿9,449</td></tr>
-        <tr><td data-i18n="cf_living_deduct">หัก ค่าใช้จ่ายประจำวัน</td><td class="neg" id="cf-living">−฿17,500</td></tr>
-        <tr class="total"><td data-i18n="cf_net_saving">เหลือสะสม/เดือน</td><td id="cf-net" class="pos">฿21,018</td></tr>
+        <tr><td><div data-i18n="cf_fixed_deduct">หัก Fixed costs</div><div class="sub-label" data-i18n="cf_fixed_sub">เทนนิส + AirPod + DCA</div></td><td class="neg" id="cf-fixed"></td></tr>
+        <tr><td data-i18n="cf_living_deduct">หัก ค่าใช้จ่ายประจำวัน</td><td class="neg" id="cf-living"></td></tr>
+        <tr class="total"><td data-i18n="cf_net_saving">เหลือสะสม/เดือน</td><td id="cf-net" class="pos"></td></tr>
       </table>
     </div>
 
@@ -1541,13 +1541,13 @@ function aiShowConfirm(entry){
       <div class="card-title" data-i18n="yearend_title">ยอดคาดการณ์ปลาย ธ.ค. 2026</div>
       <table class="table">
         <tr><td data-i18n="ye_current_balance">เงินในบัญชีตอนนี้ (10 มิ.ย.)</td><td class="pos">+฿186,661</td></tr>
-        <tr><td data-i18n="ye_net_savings">เงินสะสมสุทธิ 7 เดือน</td><td class="pos" id="ye-savings">+฿147,126</td></tr>
+        <tr><td data-i18n="ye_net_savings">เงินสะสมสุทธิ 7 เดือน</td><td class="pos" id="ye-savings"></td></tr>
         <tr><td><div data-i18n="ye_big_bills">บิลก้อนใหญ่ทั้งปี</div><div class="sub-label" data-i18n="ye_big_bills_sub">บัตร KBANK + SCB + เทอม ส.ค. + เทอม ธ.ค.</div></td><td class="neg">−฿233,311</td></tr>
-        <tr class="total"><td data-i18n="ye_final">ยอดคงเหลือปลาย ธ.ค.</td><td id="ye-total" class="pos">฿100,476</td></tr>
+        <tr class="total"><td data-i18n="ye_final">ยอดคงเหลือปลาย ธ.ค.</td><td id="ye-total" class="pos"></td></tr>
       </table>
       <div class="progress-wrap">
-        <div class="progress-label"><span>฿0</span><span id="ye-progress-label">฿100,476 / เป้า ฿100,000</span><span>฿200,000</span></div>
-        <div class="progress-bar"><div class="progress-fill" id="ye-progress-fill" style="width:50%;background:#1A7A56;"></div></div>
+        <div class="progress-label"><span>฿0</span><span id="ye-progress-label"></span><span>฿200,000</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="ye-progress-fill" style="width:0%;"></div></div>
       </div>
     </div>
   </div>
