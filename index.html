@@ -377,7 +377,7 @@ const STRINGS={
     daily_budget_label:'งบชีวิตประจำวันที่ตั้งไว้',day_approx_tpl:'วันละประมาณ {v}',
     fixed_costs_title:'Fixed Costs ที่หักออกแล้ว',cashflow_title:'Cashflow สรุป',
     yearend_title:'ยอดคาดการณ์ปลาย ธ.ค. 2026',
-    cat_budget_title:'งบแยกตามหมวด',cat_budget_hint:'ตั้งงบ 0 = ไม่จำกัด',
+    cat_budget_title:'งบแยกตามหมวด',cat_budget_hint:'ตั้งงบ 0 = ไม่จำกัด',no_limit:'ไม่จำกัด',
     display_title:'การแสดงผล',dark_mode:'Dark Mode',dark_mode_desc:'ปรับธีมมืด',
     lang_label:'ภาษา / Language',
     profile_title:'รูปโปรไฟล์',choose_pic:'เลือกรูป',remove_pic:'ลบรูป',
@@ -463,7 +463,7 @@ const STRINGS={
     daily_budget_label:'Monthly Living Budget',day_approx_tpl:'~{v} / day',
     fixed_costs_title:'Fixed Costs (deducted)',cashflow_title:'Cashflow Summary',
     yearend_title:'Projected Year-End Balance (Dec 2026)',
-    cat_budget_title:'Budget by Category',cat_budget_hint:'Set 0 = unlimited',
+    cat_budget_title:'Budget by Category',cat_budget_hint:'Set 0 = unlimited',no_limit:'Unlimited',
     display_title:'Display',dark_mode:'Dark Mode',dark_mode_desc:'Toggle dark theme',
     lang_label:'Language / ภาษา',
     profile_title:'Profile Picture',choose_pic:'Choose Photo',remove_pic:'Remove',
@@ -2203,7 +2203,7 @@ function renderCatBudgetSettings(){
      return '<div class="cat-budget-row">'
        +'<div class="cat-budget-name">'+catD(cat)+'</div>'
        +'<div class="cat-budget-bar-wrap"><div class="cat-budget-bar" style="width:'+pct+'%;background:'+color+'"></div></div>'
-       +'<input class="cat-budget-input" type="number" placeholder="ไม่จำกัด" value="'+(bud||'')+'" min="0" step="100" onchange="setCatBudget(\'' +cat+ '\',this.value)"/>'
+       +'<input class="cat-budget-input" type="number" placeholder="'+t('no_limit')+'" value="'+(bud||'')+'" min="0" step="100" onchange="setCatBudget(\'' +cat+ '\',this.value)"/>'
        +'</div>';
   }).join('');
 }
