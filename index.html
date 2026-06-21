@@ -338,8 +338,203 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
   .ai-send-btn{width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:16px;cursor:pointer;flex-shrink:0;}
   .ai-suggest-chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px;flex-shrink:0;}
   .ai-chip{font-size:12px;background:var(--blue-bg);color:var(--blue);border:none;border-radius:14px;padding:6px 12px;cursor:pointer;}
+  .lang-btn{font-family:var(--sans);font-size:13px;padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;transition:.15s;}
+  .lang-btn.active,.lang-btn[data-active="1"]{background:var(--blue);color:#fff;border-color:var(--blue);}
 
 </style>
+
+<script>
+// ══════════════ i18n ══════════════
+const STRINGS={
+  th:{
+    tab_planner:'Planner',tab_tracker:'Tracker',tab_portfolio:'Portfolio',tab_settings:'Settings',
+    header_label:'Personal Finance · 2026',
+    this_month_remain:'คงเหลือเดือนนี้',monthly_budget:'งบเดือนนี้',spent:'ใช้ไป',daily_allowance:'ใช้ได้วันละ',
+    yesterday:'เมื่อวาน',today:'วันนี้',
+    add_entry_title:'เพิ่มรายการ',entry_desc_ph:'เช่น ข้าวกลางวัน',entry_note_ph:'โน้ต (ไม่บังคับ)',
+    add_btn:'+ เพิ่ม',add_btn_saving:'กำลังบันทึก...',
+    all_entries_title:'รายการทั้งหมด',date_label:'วันที่',all_month:'ทั้งเดือน',view_month_label:'ดูเดือน',
+    export_csv:'⬇ Export CSV',cat_breakdown_title:'แยกตามหมวด',daily_chart_title:'รายจ่ายรายวัน',
+    weekly_title:'สรุปรายสัปดาห์',compare_title:'เทียบกับเดือนที่แล้ว',
+    prev_month:'เดือนที่แล้ว',curr_month:'เดือนนี้',
+    col_date:'วันที่',col_item:'รายการ',col_amount:'จำนวน',col_cat:'หมวด',
+    sync_loading:'กำลังโหลด...',sync_ok:'ซิงก์แล้ว',sync_fail:'เชื่อมต่อไม่ได้',
+    sync_saving:'กำลังบันทึก...',sync_saved:'บันทึกแล้ว ✓',sync_save_fail:'บันทึกไม่สำเร็จ',
+    sync_deleting:'กำลังลบ...',sync_deleted:'ลบแล้ว',sync_del_fail:'ลบไม่สำเร็จ',
+    no_entries_month:'ยังไม่มีรายการเดือนนี้',no_entries_day:'ไม่มีรายการในวันที่เลือก',
+    loading:'กำลังโหลด...',db_error:'เชื่อมต่อฐานข้อมูลไม่ได้ กรุณาลองใหม่ครับ',
+    confirm_delete:'ลบรายการนี้?',fill_required:'กรุณากรอกข้อมูลให้ครบครับ',
+    notif_over80:'⚠️ ใช้งบไปเกิน 80% แล้ว — ระวังด้วยนะครับ!',budget_over:'งบเดือนนี้หมดแล้ว',
+    days_left_tpl:'เหลืออีก {n} วัน',month_avg_tpl:'เฉลี่ยทั้งเดือน ({n} วัน)',
+    used_pct_tpl:'ใช้ไป {n}%',remain_label:'เหลือ',
+    week1:'สัปดาห์ 1 (1–7)',week2:'สัปดาห์ 2 (8–14)',week3:'สัปดาห์ 3 (15–21)',week4:'สัปดาห์ 4 (22+)',
+    more_this_month:'⚠️ เดือนนี้ใช้มากกว่าเดือนที่แล้ว',less_this_month:'✅ เดือนนี้ประหยัดกว่าเดือนที่แล้ว',
+    same_as_last:'เท่ากับเดือนที่แล้วพอดี',exceed_badge:'เกิน',no_data:'ไม่มีข้อมูล',
+    planner_sliders_title:'ปรับตัวแปร',planner_living_label:'ค่าใช้จ่ายชีวิตประจำวัน',
+    planner_living_desc:'อาหาร ของใช้ สังสรรค์ (ไม่รวมเทนนิส/DCA)',
+    planner_target_label:'เป้าเงินเหลือปลาย ธ.ค.',planner_target_desc:'ยอดขั้นต่ำที่อยากมีในบัญชี',
+    planner_dca_label:'DCA VOO ต่อเดือน',planner_dca_desc:'ลงทุนอัตโนมัติทุกวันที่ 1',
+    daily_budget_label:'งบชีวิตประจำวันที่ตั้งไว้',day_approx_tpl:'วันละประมาณ {v}',
+    fixed_costs_title:'Fixed Costs ที่หักออกแล้ว',cashflow_title:'Cashflow สรุป',
+    yearend_title:'ยอดคาดการณ์ปลาย ธ.ค. 2026',
+    cat_budget_title:'งบแยกตามหมวด',cat_budget_hint:'ตั้งงบ 0 = ไม่จำกัด',
+    display_title:'การแสดงผล',dark_mode:'Dark Mode',dark_mode_desc:'ปรับธีมมืด',
+    lang_label:'ภาษา / Language',
+    profile_title:'รูปโปรไฟล์',choose_pic:'เลือกรูป',remove_pic:'ลบรูป',
+    pic_hint:'กดที่รูปหรือปุ่มเพื่อเปลี่ยนครับ',
+    data_title:'ข้อมูล',export_all_csv:'⬇ Export CSV ทุกรายการ',
+    data_hint:'ข้อมูลเก็บใน Supabase — sync ทุกอุปกรณ์อัตโนมัติ',
+    port_current_val:'มูลค่าปัจจุบัน (THB)',port_total_cost:'ต้นทุนรวม',port_pnl:'กำไร/ขาดทุน',
+    port_refresh:'🔄 Refresh ราคา',port_btn_loading:'⏳ กำลังดึงข้อมูล...',
+    port_status_init:'กด Refresh เพื่อดึงราคาล่าสุด (delay ~15 นาที)',
+    port_connecting:'กำลังเชื่อมต่อ...',port_status_error:'ดึงข้อมูลไม่ได้ กรุณาลองใหม่',
+    port_updated_tpl:'อัปเดตล่าสุด {t} (delay ~15 นาที)',
+    port_th_label:'🇹🇭 หุ้นไทย (฿)',port_us_label:'🇺🇸 หุ้น US',
+    port_cost_lbl:'ต้นทุน',port_current_lbl:'ปัจจุบัน',
+    port_section_th:'หุ้นไทย (SET)',port_section_us:'หุ้น US (USD)',
+    port_edit_title:'แก้ไขหุ้นที่ถือ',port_add_title:'เพิ่มหุ้นใหม่',
+    port_edit_modal_title:'✏️ แก้ไขหุ้น',port_alloc:'Portfolio Allocation',
+    col_stock:'หุ้น',col_price:'ราคา',col_cost:'ต้นทุน',col_value:'มูลค่า',
+    port_cost_us:'ต้นทุน ($)',port_val_us:'มูลค่า (฿)',port_pnl_us:'P&L (USD)',
+    port_disclaimer:'📌 ราคาหุ้น delay ~15 นาที จาก Yahoo Finance — ไม่เหมาะสำหรับการซื้อขาย ใช้เพื่อติดตาม portfolio เท่านั้นครับ',
+    port_confirm_del:'ลบ {t}?',port_fill:'กรุณากรอกข้อมูลให้ครบครับ',
+    port_edit_btn:'✏️ แก้',port_del_btn:'🗑 ลบ',
+    lock_title:'Planner ถูกล็อกไว้',lock_sub:'ใส่รหัสผ่านเพื่อดูข้อมูล',
+    lock_placeholder:'รหัสผ่าน',lock_btn:'ปลดล็อก',lock_cancel:'ยกเลิก',
+    lock_wrong:'❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่',
+    modal_edit_title:'✏️ แก้ไขรายการ',modal_item:'รายการ',modal_amount:'จำนวน (฿)',
+    modal_cat:'หมวด',modal_date:'วันที่',modal_note:'โน้ต',modal_note_ph:'ไม่บังคับ',
+    modal_save:'บันทึก',modal_cancel:'ยกเลิก',
+    ai_title:'🤖 ผู้ช่วยการเงิน',ai_ph:'ถามอะไรก็ได้ หรือพิมพ์รายการที่ใช้...',
+    ai_chip1:'หมวดไหนเยอะสุด',ai_ask1:'เดือนนี้ใช้หมวดไหนเยอะสุด',
+    ai_chip2:'สรุปสถานะตอนนี้',ai_ask2:'สรุปสถานะการเงินตอนนี้ให้ฟังหน่อย',
+    ai_chip3:'วิธีให้ถึงเป้า',ai_ask3:'ถ้าอยากให้ถึงเป้าปลายปีต้องทำไง',
+  },
+  en:{
+    tab_planner:'Planner',tab_tracker:'Tracker',tab_portfolio:'Portfolio',tab_settings:'Settings',
+    header_label:'Personal Finance · 2026',
+    this_month_remain:'Remaining This Month',monthly_budget:'Monthly Budget',spent:'Spent',daily_allowance:'Daily Budget',
+    yesterday:'Yesterday',today:'Today',
+    add_entry_title:'Add Entry',entry_desc_ph:'e.g. Lunch',entry_note_ph:'Note (optional)',
+    add_btn:'+ Add',add_btn_saving:'Saving...',
+    all_entries_title:'All Entries',date_label:'Date',all_month:'Whole Month',view_month_label:'View Month',
+    export_csv:'⬇ Export CSV',cat_breakdown_title:'By Category',daily_chart_title:'Daily Spending',
+    weekly_title:'Weekly Summary',compare_title:'vs. Last Month',
+    prev_month:'Last Month',curr_month:'This Month',
+    col_date:'Date',col_item:'Item',col_amount:'Amount',col_cat:'Category',
+    sync_loading:'Loading...',sync_ok:'Synced',sync_fail:'Connection failed',
+    sync_saving:'Saving...',sync_saved:'Saved ✓',sync_save_fail:'Save failed',
+    sync_deleting:'Deleting...',sync_deleted:'Deleted',sync_del_fail:'Delete failed',
+    no_entries_month:'No entries this month',no_entries_day:'No entries on selected day',
+    loading:'Loading...',db_error:'Could not connect to database. Please try again.',
+    confirm_delete:'Delete this entry?',fill_required:'Please fill in all required fields.',
+    notif_over80:'⚠️ Over 80% of budget used — please be careful!',budget_over:'Monthly budget exhausted',
+    days_left_tpl:'{n} days left',month_avg_tpl:'Monthly avg ({n} days)',
+    used_pct_tpl:'Used {n}%',remain_label:'Left',
+    week1:'Week 1 (1–7)',week2:'Week 2 (8–14)',week3:'Week 3 (15–21)',week4:'Week 4 (22+)',
+    more_this_month:'⚠️ Spent more than last month',less_this_month:'✅ Spent less than last month',
+    same_as_last:'Same as last month',exceed_badge:'Over',no_data:'No data',
+    planner_sliders_title:'Adjust Variables',planner_living_label:'Daily Living Expenses',
+    planner_living_desc:'Food, essentials, social (excl. tennis/DCA)',
+    planner_target_label:'Year-End Target (Dec)',planner_target_desc:'Minimum balance to keep in account',
+    planner_dca_label:'DCA VOO / Month',planner_dca_desc:'Auto-invest on the 1st of each month',
+    daily_budget_label:'Monthly Living Budget',day_approx_tpl:'~{v} / day',
+    fixed_costs_title:'Fixed Costs (deducted)',cashflow_title:'Cashflow Summary',
+    yearend_title:'Projected Year-End Balance (Dec 2026)',
+    cat_budget_title:'Budget by Category',cat_budget_hint:'Set 0 = unlimited',
+    display_title:'Display',dark_mode:'Dark Mode',dark_mode_desc:'Toggle dark theme',
+    lang_label:'Language / ภาษา',
+    profile_title:'Profile Picture',choose_pic:'Choose Photo',remove_pic:'Remove',
+    pic_hint:'Tap photo or button to change',
+    data_title:'Data',export_all_csv:'⬇ Export All CSV',
+    data_hint:'Data stored in Supabase — synced across all devices automatically',
+    port_current_val:'Current Value (THB)',port_total_cost:'Total Cost',port_pnl:'Profit / Loss',
+    port_refresh:'🔄 Refresh Prices',port_btn_loading:'⏳ Fetching...',
+    port_status_init:'Tap Refresh to fetch latest prices (~15 min delay)',
+    port_connecting:'Connecting...',port_status_error:'Failed to fetch. Please retry.',
+    port_updated_tpl:'Updated {t} (~15 min delay)',
+    port_th_label:'🇹🇭 Thai Stocks (฿)',port_us_label:'🇺🇸 US Stocks',
+    port_cost_lbl:'Cost',port_current_lbl:'Current',
+    port_section_th:'Thai Stocks (SET)',port_section_us:'US Stocks (USD)',
+    port_edit_title:'Edit Holdings',port_add_title:'Add New Stock',
+    port_edit_modal_title:'✏️ Edit Stock',port_alloc:'Portfolio Allocation',
+    col_stock:'Stock',col_price:'Price',col_cost:'Cost',col_value:'Value',
+    port_cost_us:'Cost ($)',port_val_us:'Value (฿)',port_pnl_us:'P&L (USD)',
+    port_disclaimer:'📌 Prices delayed ~15 min from Yahoo Finance. For tracking only — not for trading.',
+    port_confirm_del:'Remove {t}?',port_fill:'Please fill in all fields.',
+    port_edit_btn:'✏️ Edit',port_del_btn:'🗑 Remove',
+    lock_title:'Planner is Locked',lock_sub:'Enter password to view',
+    lock_placeholder:'Password',lock_btn:'Unlock',lock_cancel:'Cancel',
+    lock_wrong:'❌ Incorrect password. Please try again.',
+    modal_edit_title:'✏️ Edit Entry',modal_item:'Item',modal_amount:'Amount (฿)',
+    modal_cat:'Category',modal_date:'Date',modal_note:'Note',modal_note_ph:'Optional',
+    modal_save:'Save',modal_cancel:'Cancel',
+    ai_title:'🤖 Finance Assistant',ai_ph:'Ask anything or type an expense...',
+    ai_chip1:'Top category',ai_ask1:'Which category did I spend most this month?',
+    ai_chip2:'Financial summary',ai_ask2:'Give me a summary of my finances now',
+    ai_chip3:'Hit my target',ai_ask3:'What do I need to do to reach my year-end goal?',
+  }
+};
+
+const CAT_DISPLAY={
+  th:{อาหาร:'อาหาร',เครื่องดื่ม:'เครื่องดื่ม',เดินทาง:'เดินทาง',ช้อปปิ้ง:'ช้อปปิ้ง',สังสรรค์:'สังสรรค์',สุขภาพ:'สุขภาพ','บิล/สมาชิก':'บิล/สมาชิก',การศึกษา:'การศึกษา',ออกกำลังกาย:'ออกกำลังกาย',อื่นๆ:'อื่นๆ'},
+  en:{อาหาร:'Food',เครื่องดื่ม:'Drinks',เดินทาง:'Transport',ช้อปปิ้ง:'Shopping',สังสรรค์:'Social',สุขภาพ:'Health','บิล/สมาชิก':'Bills/Subs',การศึกษา:'Education',ออกกำลังกาย:'Exercise',อื่นๆ:'Other'}
+};
+
+const MONTH_NAMES_EN=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS_TH_EN={มิถุนายน:'June',กรกฎาคม:'July',สิงหาคม:'August',กันยายน:'September',ตุลาคม:'October',พฤศจิกายน:'November',ธันวาคม:'December'};
+
+let currentLang=localStorage.getItem('mek_lang')||'th';
+
+function t(key){return(STRINGS[currentLang]&&STRINGS[currentLang][key])||(STRINGS.th&&STRINGS.th[key])||key;}
+function catD(cat){return(CAT_DISPLAY[currentLang]&&CAT_DISPLAY[currentLang][cat])||cat;}
+function mName(n){return currentLang==='en'?(MONTH_NAMES_EN[n]||''):(typeof MONTH_NAMES!=='undefined'?MONTH_NAMES[n]||'':'');}
+function tpl(key,subs){var s=t(key);Object.keys(subs).forEach(function(k){s=s.replace('{'+k+'}',subs[k]);});return s;}
+
+function renderCatSelects(){
+  ['entry-cat','edit-cat'].forEach(function(id){
+    var sel=document.getElementById(id);
+    if(!sel)return;
+    var cur=sel.value;
+    var cats=[
+      {v:'อาหาร',e:'🍜'},{v:'เครื่องดื่ม',e:'☕'},{v:'เดินทาง',e:'🚗'},{v:'ช้อปปิ้ง',e:'🛍'},
+      {v:'สังสรรค์',e:'🍻'},{v:'สุขภาพ',e:'💊'},{v:'บิล/สมาชิก',e:'📱'},{v:'การศึกษา',e:'🎓'},
+      {v:'ออกกำลังกาย',e:'💪'},{v:'อื่นๆ',e:'📦'}
+    ];
+    sel.innerHTML=cats.map(function(c){return'<option value="'+c.v+'">'+c.e+' '+catD(c.v)+'</option>';}).join('');
+    if(cur)sel.value=cur;
+  });
+}
+
+function updateLangBtns(){
+  document.querySelectorAll('.lang-btn').forEach(function(b){
+    var active=b.dataset.lang===currentLang;
+    b.style.background=active?'var(--blue)':'var(--surface)';
+    b.style.color=active?'#fff':'var(--text)';
+    b.style.borderColor=active?'var(--blue)':'var(--border)';
+  });
+}
+
+function setLang(lang){
+  currentLang=lang;
+  localStorage.setItem('mek_lang',lang);
+  applyLang();
+  updateLangBtns();
+  if(typeof renderTracker==='function')renderTracker();
+  if(typeof renderCatBudgetSettings==='function')renderCatBudgetSettings();
+  if(typeof renderPortfolio==='function')renderPortfolio();
+}
+
+function applyLang(){
+  document.querySelectorAll('[data-i18n]').forEach(function(el){el.textContent=t(el.getAttribute('data-i18n'));});
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){el.placeholder=t(el.getAttribute('data-i18n-placeholder'));});
+  renderCatSelects();
+  updateLangBtns();
+  var nb=document.getElementById('notif-banner');if(nb&&nb.style.display!=='none')nb.textContent=t('notif_over80');
+  var aih=document.querySelector('.ai-header-title');if(aih)aih.textContent=t('ai_title');
+  var aii=document.getElementById('ai-input');if(aii)aii.placeholder=t('ai_ph');
+}
+</script>
 
 <script>
 if('serviceWorker' in navigator){
@@ -378,13 +573,13 @@ function populateDayDropdown(){
   days = days.sort().reverse();
 
   const prevVal = sel.value;
-  sel.innerHTML = '<option value="all">ทั้งเดือน</option>';
+  sel.innerHTML = '<option value="all">'+t('all_month')+'</option>';
   days.forEach(d=>{
     const dt = new Date(d+'T00:00:00');
-    const label = dt.getDate()+' '+['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][dt.getMonth()+1];
+    const label = dt.getDate()+' '+mName(dt.getMonth()+1);
     const opt = document.createElement('option');
     opt.value = d; opt.textContent = label;
-    if(d === todayStr) opt.textContent += ' (วันนี้)';
+    if(d === todayStr) opt.textContent += ' ('+t('today')+')';
     sel.appendChild(opt);
   });
   // default: today if viewing current month, else keep prev selection, else all
@@ -490,7 +685,7 @@ function addHolding(){
   const shares = parseFloat(document.getElementById('new-shares').value);
   const avg    = parseFloat(document.getElementById('new-avg').value);
   const market = document.getElementById('new-market').value;
-  if(!ticker||!shares||!avg){alert('กรุณากรอกข้อมูลให้ครบครับ');return;}
+  if(!ticker||!shares||!avg){alert(t('port_fill'));return;}
   holdings.push({ticker,name:name||ticker,shares,avgCost:avg,market});
   saveHoldings();
   document.getElementById('new-ticker').value='';
@@ -531,7 +726,7 @@ function savePortEdit(){
 }
 
 function removeHolding(i){
-  if(!confirm('ลบ '+holdings[i].ticker+'?'))return;
+  if(!confirm(tpl('port_confirm_del',{t:holdings[i].ticker})))return;
   holdings.splice(i,1);
   saveHoldings();
   renderPortfolio();
@@ -541,8 +736,8 @@ async function fetchPrices(){
   const btn = document.getElementById('port-refresh-btn');
   const status = document.getElementById('port-status');
   btn.classList.add('loading');
-   btn.innerHTML = '<span>⏳</span> กำลังดึงข้อมูล...';
-   status.textContent = 'กำลังเชื่อมต่อ...';
+   btn.innerHTML = '<span>⏳</span> '+t('port_btn_loading');
+   status.textContent = t('port_connecting');
 
   try {
     // All stocks via Supabase Edge Function (Yahoo Finance server-side)
@@ -573,16 +768,16 @@ async function fetchPrices(){
     localStorage.setItem('mek_prices', JSON.stringify(livePrice));
     localStorage.setItem('mek_usdthb', usdThb);
     localStorage.setItem('mek_price_time', nowFull);
-    status.textContent = 'อัปเดตล่าสุด '+now+' (delay ~15 นาที)';
+    status.textContent = tpl('port_updated_tpl',{t:now});
     renderPortfolio();
     savePortfolioToServer();
   } catch(e) {
-    status.textContent = 'ดึงข้อมูลไม่ได้ กรุณาลองใหม่';
+    status.textContent = t('port_status_error');
     renderPortfolio();
   }
 
   btn.classList.remove('loading');
-  btn.innerHTML = '<span>🔄</span> Refresh ราคา';
+  btn.innerHTML = '<span>🔄</span> '+t('port_refresh');
 }
 
 function setManualPrice(ticker, val){
@@ -609,7 +804,7 @@ function loadCachedPricesLocal(){
     if(cachedFx) usdThb = parseFloat(cachedFx);
     if(cachedTime){
       const status = document.getElementById('port-status');
-      if(status) status.textContent = 'ราคาล่าสุด: '+cachedTime+' (กด Refresh เพื่ออัปเดต)';
+      if(status) status.textContent = tpl('port_updated_tpl',{t:cachedTime});
     }
   } catch(e){}
 }
@@ -631,7 +826,7 @@ async function loadCachedPrices(){
       if(data.time){
         localStorage.setItem('mek_price_time', data.time);
         const status = document.getElementById('port-status');
-        if(status) status.textContent = 'ราคาล่าสุด: '+data.time+' (กด Refresh เพื่ออัปเดต)';
+        if(status) status.textContent = tpl('port_updated_tpl',{t:data.time});
       }
       renderPortfolio();
     }
@@ -819,8 +1014,8 @@ function renderPortfolio(){
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;gap:8px;">'
         +'<div style="flex:1;"><span style="font-weight:600;">'+h.ticker+'</span> <span style="color:var(--text-3);">'+h.shares+' หุ้น @ '+currency+h.avgCost+'</span></div>'
         +'<div style="display:flex;gap:6px;">'
-        +'<button class="port-edit-btn" style="background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:4px 8px;font-size:12px;" onclick="openPortEdit('+i+')">✏️ แก้</button>'
-        +'<button class="port-edit-btn" style="background:var(--red-bg);color:var(--red);border-radius:6px;padding:4px 8px;font-size:12px;" onclick="removeHolding('+i+')">🗑</button>'
+        +'<button class="port-edit-btn" style="background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:4px 8px;font-size:12px;" onclick="openPortEdit('+i+')">'+t('port_edit_btn')+'</button>'
+        +'<button class="port-edit-btn" style="background:var(--red-bg);color:var(--red);border-radius:6px;padding:4px 8px;font-size:12px;" onclick="removeHolding('+i+')">'+t('port_del_btn')+'</button>'
         +'</div></div>';
     }).join('');
   }
@@ -1066,7 +1261,9 @@ async function aiWelcome(){
   loadingDiv.classList.add('loading');
   try{
     const context = aiBuildContext();
-    const systemPrompt = 'คุณเป็นผู้ช่วยการเงินส่วนตัวของ Mek พูดไทยเป็นกันเอง กระชับ ไม่เกิน 3-4 ประโยค ห้ามทักทายซ้ำซาก ตรงประเด็น\n\nข้อมูลการเงินปัจจุบันของ Mek:\n'+context+'\n\nงาน: ทักทายสั้นๆ แล้วสรุปสถานะการเงินเดือนนี้ให้ฟัง ถ้ามีหมวดไหนใช้เกินงบให้เตือนด้วย ถ้าไม่มีอะไรน่าเป็นห่วงก็บอกว่าโอเคปกติ';
+    const systemPrompt = currentLang==='en'
+      ? 'You are Mek\'s personal finance assistant. Be friendly and concise (3-4 sentences max). No generic greetings. Summarize this month\'s financial status. Warn about overspent categories if any.\n\nMek\'s current financial data:\n'+context
+      : 'คุณเป็นผู้ช่วยการเงินส่วนตัวของ Mek พูดไทยเป็นกันเอง กระชับ ไม่เกิน 3-4 ประโยค ห้ามทักทายซ้ำซาก ตรงประเด็น\n\nข้อมูลการเงินปัจจุบันของ Mek:\n'+context+'\n\nงาน: ทักทายสั้นๆ แล้วสรุปสถานะการเงินเดือนนี้ให้ฟัง ถ้ามีหมวดไหนใช้เกินงบให้เตือนด้วย ถ้าไม่มีอะไรน่าเป็นห่วงก็บอกว่าโอเคปกติ';
 
     const res = await fetch(AI_PROXY_URL,{
       method:'POST',
@@ -1105,7 +1302,9 @@ async function aiSend(){
 
   try{
     const context = aiBuildContext();
-    const systemPrompt = 'คุณเป็นผู้ช่วยการเงินส่วนตัวของ Mek พูดไทยเป็นกันเอง กระชับ ตรงประเด็น ไม่ต้องทักทาย\n\n' +
+    const systemPrompt = currentLang==='en'
+      ? 'You are Mek\'s personal finance assistant. Be friendly and concise. No greetings needed.\n\nMek\'s current financial data:\n'+context+'\n\nYou have 2 roles:\n1) If Mek describes an expense (e.g. "lunch 60 baht" or "gas 300"), reply ONLY with JSON: {"action":"add_entry","description":"...","amount":number,"category":"most fitting from: '+ALL_CATS.join(', ')+'","note":""} — no other text.\n2) For general finance/portfolio/planning questions, reply with plain conversational text (not JSON), concise and grounded in the data above.'
+      : 'คุณเป็นผู้ช่วยการเงินส่วนตัวของ Mek พูดไทยเป็นกันเอง กระชับ ตรงประเด็น ไม่ต้องทักทาย\n\n' +
       'ข้อมูลการเงินปัจจุบันของ Mek:\n'+context+'\n\n' +
       'หน้าที่ของคุณมี 2 อย่าง:\n' +
       '1) ถ้า Mek พิมพ์อธิบายรายการใช้จ่าย (เช่น "ข้าวเที่ยง 60 บาท" หรือ "เติมน้ำมัน 300") ให้ตอบกลับเป็น JSON เท่านั้น รูปแบบ: {"action":"add_entry","description":"...","amount":number,"category":"หมวดที่เหมาะสมจากลิสต์: '+ALL_CATS.join(', ')+'","note":""} ห้ามมีข้อความอื่นนอกจาก JSON\n' +
@@ -1291,10 +1490,10 @@ function aiShowConfirm(entry){
   <!-- WIDGET SUMMARY BAR -->
 
   <div class="tab-panel active" id="tab-tracker">
-    <div class="notif-banner" id="notif-banner">⚠️ ใช้งบไปเกิน 80% แล้ว — ระวังด้วยนะครับ!</div>
+    <div class="notif-banner" id="notif-banner" data-i18n="notif_over80">⚠️ ใช้งบไปเกิน 80% แล้ว — ระวังด้วยนะครับ!</div>
 
     <div class="filter-row">
-      <label>ดูเดือน</label>
+      <label data-i18n="view_month_label">ดูเดือน</label>
       <select id="view-month" onchange="loadEntries()">
         <option value="6">มิถุนายน 2026</option>
         <option value="7">กรกฎาคม 2026</option>
@@ -1310,19 +1509,19 @@ function aiShowConfirm(entry){
 
     <!-- KBank-style hero summary card -->
     <div style="background:var(--grad);border-radius:18px;padding:18px 20px;margin-bottom:10px;box-shadow:0 4px 16px rgba(11,31,58,.25);">
-      <div style="font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">คงเหลือเดือนนี้</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;" data-i18n="this_month_remain">คงเหลือเดือนนี้</div>
       <div style="font-family:var(--mono);font-size:28px;font-weight:600;color:#fff;" id="tr-remain">฿17,500</div>
       <div style="display:flex;gap:18px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);">
         <div style="flex:1;">
-          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">งบเดือนนี้</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;" data-i18n="monthly_budget">งบเดือนนี้</div>
           <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="tr-budget">฿17,500</div>
         </div>
         <div style="flex:1;">
-          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">ใช้ไป</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;" data-i18n="spent">ใช้ไป</div>
           <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="tr-spent">฿0</div>
         </div>
         <div style="flex:1;">
-          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">ใช้ได้วันละ</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;" data-i18n="daily_allowance">ใช้ได้วันละ</div>
           <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="tr-daily-val">—</div>
         </div>
       </div>
@@ -1332,11 +1531,11 @@ function aiShowConfirm(entry){
     <!-- Today/Yesterday compact -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:12px;color:var(--text-3);">เมื่อวาน</span>
+        <span style="font-size:12px;color:var(--text-3);" data-i18n="yesterday">เมื่อวาน</span>
         <span style="font-family:var(--mono);font-size:13px;font-weight:500;" class="muted" id="tr-yesterday">฿0</span>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:12px;color:var(--text-3);">วันนี้</span>
+        <span style="font-size:12px;color:var(--text-3);" data-i18n="today">วันนี้</span>
         <span style="font-family:var(--mono);font-size:13px;font-weight:500;" class="muted" id="tr-today">฿0</span>
       </div>
     </div>
@@ -1347,10 +1546,10 @@ function aiShowConfirm(entry){
     </div>
 
     <div class="card">
-      <div class="card-title">เพิ่มรายการ</div>
+      <div class="card-title" data-i18n="add_entry_title">เพิ่มรายการ</div>
       <div class="entry-form">
         <div class="suggest-wrap" style="position:relative;">
-          <input type="text" id="entry-desc" placeholder="เช่น ข้าวกลางวัน" autocomplete="off"
+          <input type="text" id="entry-desc" placeholder="เช่น ข้าวกลางวัน" data-i18n-placeholder="entry_desc_ph" autocomplete="off"
             oninput="onDescInput(this.value)"
             onkeydown="onDescKeydown(event)"
             onblur="setTimeout(()=>hideSuggest(),150)"/>
@@ -1370,41 +1569,41 @@ function aiShowConfirm(entry){
           <option value="อื่นๆ">📦 อื่นๆ</option>
         </select>
         <div class="date-input-wrap"><input type="date" id="entry-date"/></div>
-        <button class="add-btn" id="add-btn" onclick="addEntry()">+ เพิ่ม</button>
+        <button class="add-btn" id="add-btn" onclick="addEntry()" data-i18n="add_btn">+ เพิ่ม</button>
       </div>
-      <input type="text" id="entry-note" placeholder="โน้ต (ไม่บังคับ)" class="note-input" style="width:100%;margin-top:8px;font-family:var(--sans);font-size:16px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;"/>
+      <input type="text" id="entry-note" placeholder="โน้ต (ไม่บังคับ)" data-i18n-placeholder="entry_note_ph" class="note-input" style="width:100%;margin-top:8px;font-family:var(--sans);font-size:16px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;"/>
     </div>
 
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="card-title" style="margin-bottom:0;">รายการทั้งหมด</div>
+        <div class="card-title" style="margin-bottom:0;" data-i18n="all_entries_title">รายการทั้งหมด</div>
         <div class="day-filter-row" style="margin-bottom:0;">
-          <label>วันที่</label>
+          <label data-i18n="date_label">วันที่</label>
           <select class="day-filter-select" id="view-day" onchange="renderTracker()">
-            <option value="all">ทั้งเดือน</option>
+            <option value="all" data-i18n="all_month">ทั้งเดือน</option>
           </select>
         </div>
       </div>
-      <div id="entry-list-container"><div class="empty-state">กำลังโหลด...</div></div>
+      <div id="entry-list-container"><div class="empty-state" data-i18n="loading">กำลังโหลด...</div></div>
     </div>
 
     <div class="card" id="cat-card" style="display:none;">
-      <div class="card-title">แยกตามหมวด</div>
+      <div class="card-title" data-i18n="cat_breakdown_title">แยกตามหมวด</div>
       <div class="cat-breakdown" id="cat-breakdown"></div>
     </div>
 
     <div class="card" id="chart-card" style="display:none;">
-      <div class="card-title">รายจ่ายรายวัน</div>
+      <div class="card-title" data-i18n="daily_chart_title">รายจ่ายรายวัน</div>
       <div id="daily-chart-svg" style="width:100%;overflow-x:auto;"></div>
     </div>
 
     <div class="card" id="week-card" style="display:none;">
-      <div class="card-title">สรุปรายสัปดาห์</div>
+      <div class="card-title" data-i18n="weekly_title">สรุปรายสัปดาห์</div>
       <div class="week-grid" id="week-grid"></div>
     </div>
 
     <div class="card" id="compare-card" style="display:none;">
-      <div class="card-title">เทียบกับเดือนที่แล้ว</div>
+      <div class="card-title" data-i18n="compare_title">เทียบกับเดือนที่แล้ว</div>
       <div class="compare-grid">
         <div class="compare-item"><div class="compare-label" id="compare-prev-label">เดือนที่แล้ว</div><div class="compare-val" id="compare-prev">—</div></div>
         <div class="compare-item"><div class="compare-label" id="compare-curr-label">เดือนนี้</div><div class="compare-val" id="compare-curr">—</div></div>
@@ -1416,62 +1615,69 @@ function aiShowConfirm(entry){
   <!-- SETTINGS -->
   <div class="tab-panel" id="tab-settings">
     <div class="card">
-      <div class="card-title">งบแยกตามหมวด</div>
+      <div class="card-title" data-i18n="cat_budget_title">งบแยกตามหมวด</div>
       <div class="cat-budget-grid" id="cat-budget-grid"></div>
-      <div style="margin-top:12px;font-size:12px;color:var(--text-3);">ตั้งงบ 0 = ไม่จำกัด</div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text-3);" data-i18n="cat_budget_hint">ตั้งงบ 0 = ไม่จำกัด</div>
     </div>
 
     <div class="card">
-      <div class="card-title">การแสดงผล</div>
+      <div class="card-title" data-i18n="display_title">การแสดงผล</div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);">
-        <div><div style="font-size:13px;font-weight:500;">Dark Mode</div><div style="font-size:12px;color:var(--text-3);">ปรับธีมมืด</div></div>
+        <div><div style="font-size:13px;font-weight:500;" data-i18n="dark_mode">Dark Mode</div><div style="font-size:12px;color:var(--text-3);" data-i18n="dark_mode_desc">ปรับธีมมืด</div></div>
         <label style="position:relative;width:44px;height:24px;cursor:pointer;">
           <input type="checkbox" id="dark-toggle" onchange="toggleDark()" style="opacity:0;width:0;height:0;"/>
           <span id="dark-knob" style="position:absolute;inset:0;background:var(--border);border-radius:12px;transition:.2s;"></span>
           <span id="dark-thumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
         </label>
       </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+        <div style="font-size:13px;font-weight:500;" data-i18n="lang_label">ภาษา / Language</div>
+        <div style="display:flex;gap:6px;">
+          <button class="lang-btn" data-lang="th" onclick="setLang('th')">🇹🇭 ไทย</button>
+          <button class="lang-btn" data-lang="en" onclick="setLang('en')">🇺🇸 EN</button>
+        </div>
+      </div>
 
     </div>
 
     <div class="card">
-      <div class="card-title">รูปโปรไฟล์</div>
+      <div class="card-title" data-i18n="profile_title">รูปโปรไฟล์</div>
       <div style="display:flex;align-items:center;gap:16px;padding:4px 0;">
         <div class="profile-pic" style="width:60px;height:60px;border-color:var(--border);background:var(--blue-bg);" onclick="triggerProfileUpload()">
           <div class="profile-pic-placeholder" id="settings-profile-placeholder" style="background:var(--blue-bg);color:var(--blue);">👤</div>
           <img id="settings-profile-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"/>
         </div>
         <div>
-          <button class="add-btn" onclick="triggerProfileUpload()">เลือกรูป</button>
-          <div style="font-size:11px;color:var(--text-3);margin-top:6px;">กดที่รูปหรือปุ่มเพื่อเปลี่ยนครับ</div>
+          <button class="add-btn" onclick="triggerProfileUpload()" data-i18n="choose_pic">เลือกรูป</button>
+          <div style="font-size:11px;color:var(--text-3);margin-top:6px;" data-i18n="pic_hint">กดที่รูปหรือปุ่มเพื่อเปลี่ยนครับ</div>
         </div>
-        <button class="export-btn" onclick="removeProfilePic()" style="margin-left:auto;">ลบรูป</button>
+        <button class="export-btn" onclick="removeProfilePic()" style="margin-left:auto;" data-i18n="remove_pic">ลบรูป</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">ข้อมูล</div>
+      <div class="card-title" data-i18n="data_title">ข้อมูล</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <button class="export-btn" style="width:fit-content;" onclick="exportCSV()">⬇ Export CSV ทุกรายการ</button>
-        <div style="font-size:12px;color:var(--text-3);">ข้อมูลเก็บใน Supabase — sync ทุกอุปกรณ์อัตโนมัติ</div>
+        <button class="export-btn" style="width:fit-content;" onclick="exportCSV()" data-i18n="export_all_csv">⬇ Export CSV ทุกรายการ</button>
+        <div style="font-size:12px;color:var(--text-3);" data-i18n="data_hint">ข้อมูลเก็บใน Supabase — sync ทุกอุปกรณ์อัตโนมัติ</div>
       </div>
     </div>
   </div>
   <!-- PORTFOLIO -->
   <div class="tab-panel" id="tab-portfolio">
     <div class="port-refresh-row">
-      <div class="port-status" id="port-status">กด Refresh เพื่อดึงราคาล่าสุด (delay ~15 นาที)</div>
+      <div class="port-status" id="port-status" data-i18n="port_status_init">กด Refresh เพื่อดึงราคาล่าสุด (delay ~15 นาที)</div>
       <button class="port-refresh-btn" id="port-refresh-btn" onclick="fetchPrices()">
-        <span>🔄</span> Refresh ราคา
+        <span>🔄</span> <span data-i18n="port_refresh" style="display:contents;">Refresh ราคา</span>
       </button>
     </div>
     <!-- Overall summary -->
     <div style="background:var(--grad);border-radius:18px;padding:18px 20px;margin-bottom:10px;box-shadow:0 4px 16px rgba(11,31,58,.25);">
-      <div style="font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">มูลค่าปัจจุบัน (THB)</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;" data-i18n="port_current_val">มูลค่าปัจจุบัน (THB)</div>
       <div style="font-family:var(--mono);font-size:28px;font-weight:600;color:#fff;" id="port-total-val">—</div>
       <div style="display:flex;gap:18px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);">
         <div style="flex:1;">
-          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;">ต้นทุนรวม</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;" data-i18n="port_total_cost">ต้นทุนรวม</div>
           <div style="font-family:var(--mono);font-size:14px;color:#fff;" id="port-total-cost">—</div>
         </div>
         <div style="flex:1;">
@@ -1483,10 +1689,10 @@ function aiShowConfirm(entry){
     <!-- TH/US split -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
       <div class="card" style="margin-bottom:0;padding:14px;">
-        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">🇹🇭 หุ้นไทย (฿)</div>
+        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;" data-i18n="port_th_label">🇹🇭 หุ้นไทย (฿)</div>
         <div style="display:grid;gap:6px;">
-          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);">ต้นทุน</span><span class="port-metric-val" id="port-th-cost" style="font-size:12px;">—</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);">ปัจจุบัน</span><span class="port-metric-val" id="port-th-val" style="font-size:12px;">—</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);" data-i18n="port_cost_lbl">ต้นทุน</span><span class="port-metric-val" id="port-th-cost" style="font-size:12px;">—</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);" data-i18n="port_current_lbl">ปัจจุบัน</span><span class="port-metric-val" id="port-th-val" style="font-size:12px;">—</span></div>
           <div style="border-top:1px solid var(--border-light);padding-top:6px;display:flex;justify-content:space-between;align-items:center;">
             <span style="font-size:11px;color:var(--text-3);">P&L</span>
             <div style="text-align:right;"><div class="port-metric-val" id="port-th-pnl" style="font-size:13px;">—</div><div id="port-th-pct" style="font-size:11px;"></div></div>
@@ -1494,10 +1700,10 @@ function aiShowConfirm(entry){
         </div>
       </div>
       <div class="card" style="margin-bottom:0;padding:14px;">
-        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">🇺🇸 หุ้น US</div>
+        <div style="font-size:11px;font-weight:500;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;" data-i18n="port_us_label">🇺🇸 หุ้น US</div>
         <div style="display:grid;gap:6px;">
-          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);">ต้นทุน</span><span class="port-metric-val" id="port-us-cost" style="font-size:12px;">—</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);">ปัจจุบัน</span><span class="port-metric-val" id="port-us-val" style="font-size:12px;">—</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);" data-i18n="port_cost_lbl">ต้นทุน</span><span class="port-metric-val" id="port-us-cost" style="font-size:12px;">—</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--text-3);" data-i18n="port_current_lbl">ปัจจุบัน</span><span class="port-metric-val" id="port-us-val" style="font-size:12px;">—</span></div>
           <div style="border-top:1px solid var(--border-light);padding-top:6px;display:flex;justify-content:space-between;align-items:center;">
             <span style="font-size:11px;color:var(--text-3);">P&L</span>
             <div style="text-align:right;"><div class="port-metric-val" id="port-us-pnl" style="font-size:13px;">—</div><div id="port-us-pct" style="font-size:11px;"></div></div>
@@ -1525,31 +1731,31 @@ function aiShowConfirm(entry){
       </div>
     </div>
     <div class="card">
-      <div class="port-section-title">หุ้นไทย (SET)</div>
+      <div class="port-section-title" data-i18n="port_section_th">หุ้นไทย (SET)</div>
       <table class="port-table">
-        <tr><th>หุ้น</th><th>ราคา</th><th>ต้นทุน</th><th>มูลค่า</th><th>P&L</th></tr>
+        <tr><th data-i18n="col_stock">หุ้น</th><th data-i18n="col_price">ราคา</th><th data-i18n="col_cost">ต้นทุน</th><th data-i18n="col_value">มูลค่า</th><th>P&L</th></tr>
         <tbody id="port-thai-body"></tbody>
       </table>
     </div>
     <div class="card">
-      <div class="port-section-title">หุ้น US (USD)</div>
+      <div class="port-section-title" data-i18n="port_section_us">หุ้น US (USD)</div>
       <table class="port-table">
-        <tr><th>หุ้น</th><th>ราคา</th><th>ต้นทุน ($)</th><th>มูลค่า (฿)</th><th>P&L (USD)</th></tr>
+        <tr><th data-i18n="col_stock">หุ้น</th><th data-i18n="col_price">ราคา</th><th data-i18n="port_cost_us">ต้นทุน ($)</th><th data-i18n="port_val_us">มูลค่า (฿)</th><th data-i18n="port_pnl_us">P&L (USD)</th></tr>
         <tbody id="port-us-body"></tbody>
       </table>
       <div style="font-size:11px;color:var(--text-3);margin-top:8px;" id="port-fx-rate">USD/THB: —</div>
     </div>
     <div class="card">
-      <div class="port-section-title">แก้ไขหุ้นที่ถือ</div>
+      <div class="port-section-title" data-i18n="port_edit_title">แก้ไขหุ้นที่ถือ</div>
       <div id="port-edit-list"></div>
       <div style="margin-top:12px;">
-        <div class="port-section-title" style="margin-top:0;">เพิ่มหุ้นใหม่</div>
+        <div class="port-section-title" style="margin-top:0;" data-i18n="port_add_title">เพิ่มหุ้นใหม่</div>
         <div class="port-add-row">
           <input class="port-input" id="new-ticker" placeholder="TICKER" style="text-transform:uppercase;"/>
           <input class="port-input" id="new-name" placeholder="ชื่อ เช่น ธนาคารกสิกร"/>
           <input class="port-input" type="number" id="new-shares" placeholder="จำนวนหุ้น"/>
           <input class="port-input" type="number" id="new-avg" placeholder="Avg Cost"/>
-          <button class="add-btn" onclick="addHolding()">+ เพิ่ม</button>
+          <button class="add-btn" onclick="addHolding()" data-i18n="add_btn">+ เพิ่ม</button>
         </div>
         <div style="display:flex;gap:8px;margin-top:6px;">
           <select class="port-input" id="new-market" style="flex:1;">
@@ -1559,7 +1765,7 @@ function aiShowConfirm(entry){
         </div>
       </div>
     </div>
-    <div class="alert info">📌 ราคาหุ้น delay ~15 นาที จาก Yahoo Finance — ไม่เหมาะสำหรับการซื้อขาย ใช้เพื่อติดตาม portfolio เท่านั้นครับ</div>
+    <div class="alert info" data-i18n="port_disclaimer">📌 ราคาหุ้น delay ~15 นาที จาก Yahoo Finance — ไม่เหมาะสำหรับการซื้อขาย ใช้เพื่อติดตาม portfolio เท่านั้นครับ</div>
   </div>
 
   </div><!-- /page-content -->
@@ -1584,7 +1790,7 @@ function aiShowConfirm(entry){
 <!-- PORTFOLIO EDIT MODAL -->
 <div class="lock-popup-overlay" id="port-edit-modal" style="display:none;" onclick="if(event.target===this)closePortEdit()">
   <div class="lock-popup" style="text-align:left;">
-    <div class="modal-title">✏️ แก้ไขหุ้น</div>
+    <div class="modal-title" data-i18n="port_edit_modal_title">✏️ แก้ไขหุ้น</div>
     <input type="hidden" id="port-edit-idx"/>
     <div class="modal-field"><label>Ticker</label><input type="text" id="port-edit-ticker" style="text-transform:uppercase;"/></div>
     <div class="modal-field"><label>ชื่อ</label><input type="text" id="port-edit-name"/></div>
@@ -1597,8 +1803,8 @@ function aiShowConfirm(entry){
       </select>
     </div>
     <div class="modal-actions">
-      <button class="modal-cancel" onclick="closePortEdit()">ยกเลิก</button>
-      <button class="modal-save" onclick="savePortEdit()">บันทึก</button>
+      <button class="modal-cancel" onclick="closePortEdit()" data-i18n="modal_cancel">ยกเลิก</button>
+      <button class="modal-save" onclick="savePortEdit()" data-i18n="modal_save">บันทึก</button>
     </div>
   </div>
 </div>
@@ -1607,12 +1813,12 @@ function aiShowConfirm(entry){
 <div class="lock-popup-overlay" id="planner-lock-popup" style="display:none;">
   <div class="lock-popup">
     <div class="lock-popup-icon">🔒</div>
-    <div class="lock-popup-title">Planner ถูกล็อกไว้</div>
-    <div class="lock-popup-sub">ใส่รหัสผ่านเพื่อดูข้อมูล</div>
-    <input class="lock-popup-input" type="password" id="lock-input" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter')checkLock()"/>
+    <div class="lock-popup-title" data-i18n="lock_title">Planner ถูกล็อกไว้</div>
+    <div class="lock-popup-sub" data-i18n="lock_sub">ใส่รหัสผ่านเพื่อดูข้อมูล</div>
+    <input class="lock-popup-input" type="password" id="lock-input" placeholder="รหัสผ่าน" data-i18n-placeholder="lock_placeholder" onkeydown="if(event.key==='Enter')checkLock()"/>
     <div class="lock-popup-error" id="lock-error"></div>
-    <button class="lock-popup-btn" onclick="checkLock()">ปลดล็อก</button>
-    <button class="lock-popup-cancel" onclick="closeLockPopup()">ยกเลิก</button>
+    <button class="lock-popup-btn" onclick="checkLock()" data-i18n="lock_btn">ปลดล็อก</button>
+    <button class="lock-popup-cancel" onclick="closeLockPopup()" data-i18n="lock_cancel">ยกเลิก</button>
   </div>
 </div>
 
@@ -1621,11 +1827,11 @@ function aiShowConfirm(entry){
 <!-- EDIT MODAL -->
 <div class="modal-overlay" id="edit-modal" style="display:none;" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <div class="modal-title">✏️ แก้ไขรายการ</div>
+    <div class="modal-title" data-i18n="modal_edit_title">✏️ แก้ไขรายการ</div>
     <input type="hidden" id="edit-id"/>
-    <div class="modal-field"><label>รายการ</label><input type="text" id="edit-desc"/></div>
-    <div class="modal-field"><label>จำนวน (฿)</label><input type="number" id="edit-amt"/></div>
-    <div class="modal-field"><label>หมวด</label>
+    <div class="modal-field"><label data-i18n="modal_item">รายการ</label><input type="text" id="edit-desc"/></div>
+    <div class="modal-field"><label data-i18n="modal_amount">จำนวน (฿)</label><input type="number" id="edit-amt"/></div>
+    <div class="modal-field"><label data-i18n="modal_cat">หมวด</label>
       <select id="edit-cat">
         <option value="อาหาร">🍜 อาหาร</option>
         <option value="เครื่องดื่ม">☕ เครื่องดื่ม</option>
@@ -1639,11 +1845,11 @@ function aiShowConfirm(entry){
         <option value="อื่นๆ">📦 อื่นๆ</option>
       </select>
     </div>
-    <div class="modal-field"><label>วันที่</label><input type="date" id="edit-date"/></div>
-    <div class="modal-field"><label>โน้ต</label><input type="text" id="edit-note" placeholder="ไม่บังคับ"/></div>
+    <div class="modal-field"><label data-i18n="modal_date">วันที่</label><input type="date" id="edit-date"/></div>
+    <div class="modal-field"><label data-i18n="modal_note">โน้ต</label><input type="text" id="edit-note" placeholder="ไม่บังคับ" data-i18n-placeholder="modal_note_ph"/></div>
     <div class="modal-actions">
-      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
-      <button class="modal-save" onclick="saveEdit()">บันทึก</button>
+      <button class="modal-cancel" onclick="closeModal()" data-i18n="modal_cancel">ยกเลิก</button>
+      <button class="modal-save" onclick="saveEdit()" data-i18n="modal_save">บันทึก</button>
     </div>
   </div>
 </div>
@@ -1702,7 +1908,7 @@ function checkLock(){
     err.textContent = '';
     inp.value = '';
   } else {
-    err.textContent = '❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่';
+    err.textContent = t('lock_wrong');
     inp.value = '';
     inp.classList.add('error');
     inp.focus();
@@ -1775,7 +1981,7 @@ function update(){
   const fixed=TENNIS+AIRPOD+dca;
   const net=SALARY-fixed-living;
   document.getElementById('result-amount').textContent=fmt(living);
-  document.getElementById('result-daily').textContent='วันละประมาณ '+fmt(Math.round(living/30));
+  document.getElementById('result-daily').textContent=tpl('day_approx_tpl',{v:fmt(Math.round(living/30))});
   document.getElementById('progress-mid').textContent=fmt(living)+'/เดือน';
   document.getElementById('fixed-dca').textContent=fmt(dca)+'/เดือน';
   document.getElementById('fixed-net').textContent=fmt(net);
@@ -1791,7 +1997,7 @@ function update(){
     const cls=bal<60000?'crit':bal<100000?'low':'safe';
     const bHtml=m.bill>0?'<div style="color:var(--red)">−฿'+m.bill.toLocaleString()+'</div><div class="tl-bill">'+m.billLabel+'</div>':'<span style="color:var(--text-3)">—</span>';
     const nHtml=net>=0?'<span class="pos">+฿'+net.toLocaleString()+'</span>':'<span class="neg">−฿'+Math.abs(net).toLocaleString()+'</span>';
-    html+='<div class="tl-row '+cls+'"><div class="tl-month">'+m.month+'</div><div>'+bHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+fmt(bal)+'</div></div>';
+    html+='<div class="tl-row '+cls+'"><div class="tl-month">'+(currentLang==='en'?(MONTHS_TH_EN[m.month]||m.month):m.month)+'</div><div>'+bHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+fmt(bal)+'</div></div>';
   });
   document.getElementById('timeline-body').innerHTML=html;
   const totalSav=net*MONTHS;
@@ -1826,20 +2032,20 @@ async function loadEntries(){
   const from='2026-'+String(month).padStart(2,'0')+'-01';
   const lastDay=new Date(2026,month,0).getDate();
   const to='2026-'+String(month).padStart(2,'0')+'-'+String(lastDay).padStart(2,'0');
-  setSyncStatus('กำลังโหลด...','#9B9B94');
+  setSyncStatus(t('sync_loading'),'#9B9B94');
   try{
     const res=await fetch(API+'/entries'+Q+'&entry_date=gte.'+from+'&entry_date=lte.'+to+'&order=entry_date.desc,created_at.desc',{headers:HEADERS});
     if(!res.ok)throw new Error();
     cachedEntries=await res.json();
-    setSyncStatus('ซิงก์แล้ว','#1A7A56');
+    setSyncStatus(t('sync_ok'),'#1A7A56');
     populateDayDropdown();
     // also load all entries for compare
     const resAll=await fetch(API+'/entries'+Q+'&order=entry_date.desc',{headers:HEADERS});
     allEntries=resAll.ok?await resAll.json():[];
     renderTracker();
   }catch(e){
-    setSyncStatus('เชื่อมต่อไม่ได้','#C0392B');
-    document.getElementById('entry-list-container').innerHTML='<div class="empty-state">เชื่อมต่อฐานข้อมูลไม่ได้ กรุณาลองใหม่ครับ</div>';
+    setSyncStatus(t('sync_fail'),'#C0392B');
+    document.getElementById('entry-list-container').innerHTML='<div class="empty-state">'+t('db_error')+'</div>';
   }
 }
 
@@ -1850,29 +2056,29 @@ async function addEntry(){
   const cat=document.getElementById('entry-cat').value;
   const date=document.getElementById('entry-date').value;
   const note=document.getElementById('entry-note').value.trim();
-  if(!desc||!amt||amt<=0||!date){alert('กรุณากรอกข้อมูลให้ครบครับ');return;}
-  const btn=document.getElementById('add-btn');btn.disabled=true;btn.textContent='กำลังบันทึก...';
-  setSyncStatus('กำลังบันทึก...','#9A6200');
+  if(!desc||!amt||amt<=0||!date){alert(t('fill_required'));return;}
+  const btn=document.getElementById('add-btn');btn.disabled=true;btn.textContent=t('add_btn_saving');
+  setSyncStatus(t('sync_saving'),'#9A6200');
   try{
     const res=await fetch(API+'/entries'+Q,{method:'POST',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify({description:desc,amt,cat,entry_date:date,note:note||null})});
     if(!res.ok)throw new Error();
     haptic('success');
     document.getElementById('entry-desc').value='';document.getElementById('entry-amt').value='';document.getElementById('entry-note').value='';
-    setSyncStatus('บันทึกแล้ว ✓','#1A7A56');
+    setSyncStatus(t('sync_saved'),'#1A7A56');
     await loadEntries();
-  }catch(e){setSyncStatus('บันทึกไม่สำเร็จ','#C0392B');alert('บันทึกไม่สำเร็จ กรุณาลองใหม่ครับ');}
-  btn.disabled=false;btn.textContent='+ เพิ่ม';
+  }catch(e){setSyncStatus(t('sync_save_fail'),'#C0392B');alert(t('sync_save_fail'));}
+  btn.disabled=false;btn.textContent=t('add_btn');
 }
 
 // DELETE
 async function deleteEntry(id){
-  if(!confirm('ลบรายการนี้?'))return;
-  setSyncStatus('กำลังลบ...','#9A6200');
+  if(!confirm(t('confirm_delete')))return;
+  setSyncStatus(t('sync_deleting'),'#9A6200');
   try{
     const res=await fetch(API+'/entries'+Q+'&id=eq.'+id,{method:'DELETE',headers:HEADERS});
     if(!res.ok)throw new Error();
-    setSyncStatus('ลบแล้ว','#1A7A56');await loadEntries();
-  }catch(e){setSyncStatus('ลบไม่สำเร็จ','#C0392B');}
+    setSyncStatus(t('sync_deleted'),'#1A7A56');await loadEntries();
+  }catch(e){setSyncStatus(t('sync_del_fail'),'#C0392B');}
 }
 
 // EDIT MODAL
@@ -1893,12 +2099,12 @@ function closeModal(){document.getElementById('edit-modal').style.display='none'
 async function saveEdit(){
   const id=document.getElementById('edit-id').value;
   const body={description:document.getElementById('edit-desc').value,amt:parseFloat(document.getElementById('edit-amt').value),cat:document.getElementById('edit-cat').value,entry_date:document.getElementById('edit-date').value,note:document.getElementById('edit-note').value||null};
-  setSyncStatus('กำลังบันทึก...','#9A6200');
+  setSyncStatus(t('sync_saving'),'#9A6200');
   try{
     const res=await fetch(API+'/entries'+Q+'&id=eq.'+id,{method:'PATCH',headers:{...HEADERS,'Prefer':'return=representation'},body:JSON.stringify(body)});
     if(!res.ok)throw new Error();
-    closeModal();setSyncStatus('บันทึกแล้ว ✓','#1A7A56');await loadEntries();
-  }catch(e){setSyncStatus('บันทึกไม่สำเร็จ','#C0392B');}
+    closeModal();setSyncStatus(t('sync_saved'),'#1A7A56');await loadEntries();
+  }catch(e){setSyncStatus(t('sync_save_fail'),'#C0392B');}
 }
 
 // EXPORT CSV
@@ -1928,7 +2134,7 @@ function renderCatBudgetSettings(){
     const pct=bud>0?Math.min(spent/bud*100,100):0;
     const color=CAT_COLORS[cat]||'#6B6B65';
      return '<div class="cat-budget-row">'
-       +'<div class="cat-budget-name">'+cat+'</div>'
+       +'<div class="cat-budget-name">'+catD(cat)+'</div>'
        +'<div class="cat-budget-bar-wrap"><div class="cat-budget-bar" style="width:'+pct+'%;background:'+color+'"></div></div>'
        +'<input class="cat-budget-input" type="number" placeholder="ไม่จำกัด" value="'+(bud||'')+'" min="0" step="100" onchange="setCatBudget(\'' +cat+ '\',this.value)"/>'
        +'</div>';
@@ -1951,13 +2157,14 @@ function renderTracker(){
   document.getElementById('tr-budget').textContent=fmt(budget);
   document.getElementById('tr-spent').textContent=fmt(spent);
   document.getElementById('tr-remain').textContent=fmt(remain);
-  document.getElementById('tr-bar-left').textContent='ใช้ไป '+Math.round(pct)+'%';
-  document.getElementById('tr-bar-right').textContent='เหลือ '+fmt(Math.max(remain,0));
+  document.getElementById('tr-bar-left').textContent=tpl('used_pct_tpl',{n:Math.round(pct)});
+  document.getElementById('tr-bar-right').textContent=t('remain_label')+' '+fmt(Math.max(remain,0));
   const fill=document.getElementById('tr-bar-fill');
   fill.style.width=pct+'%';fill.style.background=pct>=100?'#C0392B':pct>=80?'#9A6200':'#1A7A56';
 
   // Notification banner
   const banner=document.getElementById('notif-banner');
+  banner.textContent=t('notif_over80');
   banner.style.display=pct>=80&&remain>0?'block':'none';
 
   // Today / Yesterday
@@ -1976,14 +2183,13 @@ function renderTracker(){
   const daysLeft=isCurrent?new Date(2026,viewMonth,0).getDate()-today.getDate()+1:0;
   const dailyBud=daysLeft>0&&remain>0?Math.floor(remain/daysLeft):0;
   const dvEl=document.getElementById('tr-daily-val'),ddEl=document.getElementById('tr-daily-desc');
-  if(isCurrent&&daysLeft>0&&remain>0){dvEl.textContent=fmt(dailyBud);ddEl.textContent='เหลืออีก '+daysLeft+' วัน\n('+today.getDate()+'–'+new Date(2026,viewMonth,0).getDate()+' '+MONTH_NAMES[viewMonth]+')';ddEl.style.whiteSpace='pre-line';}
-  else if(isCurrent&&remain<=0){dvEl.textContent='฿0';ddEl.textContent='งบเดือนนี้หมดแล้ว';}
+  if(isCurrent&&daysLeft>0&&remain>0){dvEl.textContent=fmt(dailyBud);ddEl.textContent=tpl('days_left_tpl',{n:daysLeft})+'\n('+today.getDate()+'–'+new Date(2026,viewMonth,0).getDate()+' '+mName(viewMonth)+')';ddEl.style.whiteSpace='pre-line';}
+  else if(isCurrent&&remain<=0){dvEl.textContent='฿0';ddEl.textContent=t('budget_over');}
   else{
-    // Non-current month: show flat average (budget / total days in that month)
     const totalDaysInMonth=new Date(2026,viewMonth,0).getDate();
     const flatDaily=totalDaysInMonth>0?Math.floor(budget/totalDaysInMonth):0;
     dvEl.textContent=fmt(flatDaily);
-    ddEl.textContent='เฉลี่ยทั้งเดือน ('+totalDaysInMonth+' วัน)';
+    ddEl.textContent=tpl('month_avg_tpl',{n:totalDaysInMonth});
     ddEl.style.whiteSpace='pre-line';
   }
 
@@ -1991,22 +2197,22 @@ function renderTracker(){
   const container=document.getElementById('entry-list-container');
   const selDay = document.getElementById('view-day')?.value || 'all';
   const displayEntries = selDay === 'all' ? cachedEntries : cachedEntries.filter(e=>e.entry_date===selDay);
-  if(cachedEntries.length===0){container.innerHTML='<div class="empty-state">ยังไม่มีรายการเดือนนี้</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
-  if(displayEntries.length===0){container.innerHTML='<div class="empty-state">ไม่มีรายการในวันที่เลือก</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
-  let html='<div class="entry-row hdr"><div>วันที่</div><div>รายการ</div><div style="text-align:right">จำนวน</div><div>หมวด</div><div></div></div>';
+  if(cachedEntries.length===0){container.innerHTML='<div class="empty-state">'+t('no_entries_month')+'</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
+  if(displayEntries.length===0){container.innerHTML='<div class="empty-state">'+t('no_entries_day')+'</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
+  let html='<div class="entry-row hdr"><div>'+t('col_date')+'</div><div>'+t('col_item')+'</div><div style="text-align:right">'+t('col_amount')+'</div><div>'+t('col_cat')+'</div><div></div></div>';
   displayEntries.forEach(e=>{
     const entryId=e.id;
     const d=new Date(e.entry_date+'T00:00:00');
-    const dateStr=d.getDate()+' '+MONTH_NAMES[d.getMonth()+1];
+    const dateStr=d.getDate()+' '+mName(d.getMonth()+1);
     const color=CAT_COLORS[e.cat]||'#6B6B65';
     const catExceed=catBudgets[e.cat]>0&&cachedEntries.filter(x=>x.cat===e.cat).reduce((s,x)=>s+Number(x.amt),0)>catBudgets[e.cat];
     var eJson = JSON.stringify(e).replace(/'/g,"\\'");
-    var exceedBadge = catExceed?' <span style="font-size:10px;color:var(--red)">เกิน</span>':'';
+    var exceedBadge = catExceed?' <span style="font-size:10px;color:var(--red)">'+t('exceed_badge')+'</span>':'';
     var noteHtml = e.note?'<div class="entry-note">'+e.note+'</div>':'';
     html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light);">'
       +'<div style="flex:1;min-width:0;">'
         +'<div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.description+exceedBadge+'</div>'
-        +'<span style="font-size:10px;padding:1px 7px;border-radius:6px;background:'+color+'18;color:'+color+';display:inline-block;margin-top:3px;">'+e.cat+'</span>'
+        +'<span style="font-size:10px;padding:1px 7px;border-radius:6px;background:'+color+'18;color:'+color+';display:inline-block;margin-top:3px;">'+catD(e.cat)+'</span>'
         +noteHtml
       +'</div>'
       +'<div style="font-family:var(--mono);font-size:13px;color:var(--red);white-space:nowrap;">−฿'+Number(e.amt).toLocaleString()+'</div>'
@@ -2027,7 +2233,7 @@ function renderTracker(){
     const budText=bud>0?' / ฿'+bud.toLocaleString():'';
     const over=bud>0&&amt>bud;
      catHtml+='<div class="cat-row">'
-       +'<div class="cat-name">'+cat+'</div>'
+       +'<div class="cat-name">'+catD(cat)+'</div>'
        +'<div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:'+(maxAmt>0?amt/maxAmt*100:0)+'%;background:'+color+'"></div></div>'
        +'<div class="cat-info" style="'+(over?'color:var(--red)':'')+'">฿'+amt.toLocaleString()+budText+(over?' ⚠️':'')+'</div>'
        +'</div>';
@@ -2076,7 +2282,7 @@ function renderTracker(){
   document.getElementById('chart-card').style.display='block';
 
   // Week summary
-  const weeks=[{label:'สัปดาห์ 1 (1–7)',days:d=>d>=1&&d<=7},{label:'สัปดาห์ 2 (8–14)',days:d=>d>=8&&d<=14},{label:'สัปดาห์ 3 (15–21)',days:d=>d>=15&&d<=21},{label:'สัปดาห์ 4 (22+)',days:d=>d>=22}];
+  const weeks=[{label:t('week1'),days:d=>d>=1&&d<=7},{label:t('week2'),days:d=>d>=8&&d<=14},{label:t('week3'),days:d=>d>=15&&d<=21},{label:t('week4'),days:d=>d>=22}];
   let weekHtml='';
   weeks.forEach(w=>{
     const wSpent=cachedEntries.filter(e=>{const d=new Date(e.entry_date+'T00:00:00').getDate();return w.days(d);}).reduce((s,e)=>s+Number(e.amt),0);
@@ -2091,16 +2297,16 @@ function renderTracker(){
     const prevSpent=allEntries.filter(e=>new Date(e.entry_date+'T00:00:00').getMonth()+1===prevMonth).reduce((s,e)=>s+Number(e.amt),0);
     const currSpent=spent;
     const diff2=currSpent-prevSpent;
-    document.getElementById('compare-prev-label').textContent=MONTH_NAMES[prevMonth]||'เดือนที่แล้ว';
-    document.getElementById('compare-curr-label').textContent=MONTH_NAMES[month]||'เดือนนี้';
-    document.getElementById('compare-prev').textContent=prevSpent>0?fmt(prevSpent):'ไม่มีข้อมูล';
+    document.getElementById('compare-prev-label').textContent=mName(prevMonth)||t('prev_month');
+    document.getElementById('compare-curr-label').textContent=mName(month)||t('curr_month');
+    document.getElementById('compare-prev').textContent=prevSpent>0?fmt(prevSpent):t('no_data');
     document.getElementById('compare-curr').textContent=fmt(currSpent);
     const msgEl=document.getElementById('compare-msg');
     if(prevSpent>0){
       msgEl.style.display='block';
-      if(diff2>0){msgEl.className='alert warn';msgEl.textContent='⚠️ เดือนนี้ใช้มากกว่าเดือนที่แล้ว '+fmt(diff2);}
-      else if(diff2<0){msgEl.className='alert ok';msgEl.textContent='✅ เดือนนี้ประหยัดกว่าเดือนที่แล้ว '+fmt(Math.abs(diff2));}
-      else{msgEl.className='alert info';msgEl.textContent='เท่ากับเดือนที่แล้วพอดี';}
+      if(diff2>0){msgEl.className='alert warn';msgEl.textContent=t('more_this_month')+' '+fmt(diff2);}
+      else if(diff2<0){msgEl.className='alert ok';msgEl.textContent=t('less_this_month')+' '+fmt(Math.abs(diff2));}
+      else{msgEl.className='alert info';msgEl.textContent=t('same_as_last');}
     }else{msgEl.style.display='none';}
     document.getElementById('compare-card').style.display='block';
   }else{document.getElementById('compare-card').style.display='none';}
@@ -2138,6 +2344,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   loadEntries();
   initTheme();
   initProfilePic();
+  applyLang();
+  updateLangBtns();
   // PWA install hint
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._pwaPrompt=e;});
 });
@@ -2150,17 +2358,17 @@ update();
 <div class="ai-panel" id="ai-panel" onclick="if(event.target===this)closeAiPanel()">
   <div class="ai-sheet">
     <div class="ai-header">
-      <div class="ai-header-title">🤖 ผู้ช่วยการเงิน</div>
+      <div class="ai-header-title" data-i18n="ai_title">🤖 ผู้ช่วยการเงิน</div>
       <button class="ai-close" onclick="closeAiPanel()">✕</button>
     </div>
     <div class="ai-msgs" id="ai-msgs"></div>
     <div class="ai-suggest-chips" id="ai-chips">
-      <button class="ai-chip" onclick="aiAsk('เดือนนี้ใช้หมวดไหนเยอะสุด')">หมวดไหนเยอะสุด</button>
-      <button class="ai-chip" onclick="aiAsk('สรุปสถานะการเงินตอนนี้ให้ฟังหน่อย')">สรุปสถานะตอนนี้</button>
-      <button class="ai-chip" onclick="aiAsk('ถ้าอยากให้ถึงเป้าปลายปีต้องทำไง')">วิธีให้ถึงเป้า</button>
+      <button class="ai-chip" onclick="aiAsk(t('ai_ask1'))" data-i18n="ai_chip1">หมวดไหนเยอะสุด</button>
+      <button class="ai-chip" onclick="aiAsk(t('ai_ask2'))" data-i18n="ai_chip2">สรุปสถานะตอนนี้</button>
+      <button class="ai-chip" onclick="aiAsk(t('ai_ask3'))" data-i18n="ai_chip3">วิธีให้ถึงเป้า</button>
     </div>
     <div class="ai-input-row">
-      <input type="text" id="ai-input" placeholder="ถามอะไรก็ได้ หรือพิมพ์รายการที่ใช้..." onkeydown="if(event.key==='Enter')aiSend();"/>
+      <input type="text" id="ai-input" placeholder="ถามอะไรก็ได้ หรือพิมพ์รายการที่ใช้..." data-i18n-placeholder="ai_ph" onkeydown="if(event.key==='Enter')aiSend();"/>
       <button class="ai-send-btn" onclick="aiSend()">➤</button>
     </div>
   </div>
