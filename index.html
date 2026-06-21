@@ -2387,7 +2387,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(saved)try{catBudgets=JSON.parse(saved);}catch(e){}
   if(localStorage.getItem('darkMode')==='1'){document.getElementById('dark-toggle').checked=true;toggleDark();}
   const savedBudget=parseInt(localStorage.getItem('mek_budget'));
-  if(savedBudget)window._budget=savedBudget;
+  if(savedBudget){
+    window._budget=savedBudget;
+    var livingSl=document.getElementById('living-slider');
+    if(livingSl)livingSl.value=savedBudget;
+  }
   loadEntries();
   initTheme();
   initProfilePic();
@@ -2398,7 +2402,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._pwaPrompt=e;});
 });
 
-update();
+// Restore saved budget into slider before first render so update() doesn't overwrite it
+(function(){
+  var _b=parseInt(localStorage.getItem('mek_budget'));
+  if(_b){var sl=document.getElementById('living-slider');if(sl)sl.value=_b;}
+  update();
+})();
 </script>
 
 <!-- AI Assistant -->
