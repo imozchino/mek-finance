@@ -73,10 +73,12 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 .table .sub-label{font-size:11px;color:var(--text-3);margin-top:2px;}
 .neg{color:var(--red);}.pos{color:var(--green);}.warn{color:var(--amber);}.muted{color:var(--text-3);}
 /* Timeline */
-.tl-row{display:grid;grid-template-columns:80px 1fr 1fr 110px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;}
+.tl-row{display:grid;grid-template-columns:96px 1fr 1fr 100px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;}
 .tl-row:last-child{border-bottom:none;}
 .tl-row.hdr{font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.05em;padding-bottom:8px;border-bottom:1px solid var(--border);}
-.tl-month{font-weight:500;}.tl-bill{font-size:12px;color:var(--text-3);}
+.tl-row>div{min-width:0;overflow:hidden;}
+.tl-month{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-bill{font-size:12px;color:var(--text-3);word-break:break-word;}
 .tl-net{font-family:var(--mono);font-size:12px;}
 .tl-balance{font-family:var(--mono);font-size:13px;font-weight:500;text-align:right;}
 .tl-row.low .tl-balance{color:var(--amber);}.tl-row.crit .tl-balance{color:var(--red);}.tl-row.safe .tl-balance{color:var(--green);}
@@ -195,7 +197,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
   .page{padding:20px 14px 70px;}
   .header-title{font-size:22px;}
   .result-amount{font-size:32px;}
-  .tl-row{grid-template-columns:56px 1fr 80px;}.tl-net{display:none;}
+  .tl-row{grid-template-columns:72px 1fr 88px;}.tl-net{display:none;}
   .fixed-grid{grid-template-columns:1fr 1fr;}
   .tracker-top{grid-template-columns:1fr 1fr;}
   .tracker-metric:last-child{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;}
@@ -1533,7 +1535,7 @@ function aiShowConfirm(entry){
 
     <div class="card">
       <div class="card-title" data-i18n="tl_title">Timeline มิ.ย.–ธ.ค. 2026</div>
-      <div class="tl-row hdr"><div data-i18n="tl_month">เดือน</div><div data-i18n="tl_bill">บิลก้อนใหญ่</div><div data-i18n="tl_net">สะสมสุทธิ</div><div style="text-align:right" data-i18n="tl_balance">ยอดปิด</div></div>
+      <div class="tl-row hdr"><div data-i18n="tl_month">เดือน</div><div data-i18n="tl_bill">บิลก้อนใหญ่</div><div class="tl-net" data-i18n="tl_net">สะสมสุทธิ</div><div style="text-align:right" data-i18n="tl_balance">ยอดปิด</div></div>
       <div id="timeline-body"></div>
       <div class="alert info" style="margin-top:14px;" data-i18n="tl_kbank_alert">📌 บิล KBANK ฿54,070 ครบกำหนด 25 มิ.ย. แต่เงินเดือนเข้า 27 มิ.ย. — ใช้ SCB ฿68k จ่ายก่อนได้ครับ</div>
     </div>
