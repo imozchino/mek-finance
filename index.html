@@ -2086,8 +2086,39 @@ function update(){
   else{amtEl.className='result-amount tight';pillEl.className='pill tight';pillTxt.textContent=t('plan_pill_below');alertEl.className='alert bad';alertEl.textContent=tpl('plan_alert_bad_tpl',{end:fmt(yearEnd)});pfill.style.background='#C0392B';}
   window._budget=living;
   localStorage.setItem('mek_budget', living);
+  clearTimeout(window._budgetSaveTimer);
+  window._budgetSaveTimer=setTimeout(()=>saveBudgetToServer(living),1000);
   renderCatBudgetSettings();
 
+}
+
+let _budgetSaveTimer=null;
+async function saveBudgetToServer(v){
+  try{
+    await fetch(API+'/settings'+Q+'&on_conflict=key',{
+      method:'POST',
+      headers:{...HEADERS,'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({key:'mek_budget',value:String(v)})
+    });
+  }catch(e){}
+}
+
+async function loadBudgetFromServer(){
+  try{
+    const r=await fetch(API+'/settings'+Q+'&key=eq.mek_budget&select=value',{headers:HEADERS});
+    if(!r.ok)return;
+    const data=await r.json();
+    if(data&&data[0]&&data[0].value){
+      const v=parseInt(data[0].value);
+      if(v&&v!==parseInt(localStorage.getItem('mek_budget'))){
+        localStorage.setItem('mek_budget',v);
+        window._budget=v;
+        var sl=document.getElementById('living-slider');
+        if(sl)sl.value=v;
+        update();
+      }
+    }
+  }catch(e){}
 }
 
 // SYNC STATUS
@@ -2416,6 +2447,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(livingSl)livingSl.value=savedBudget;
   }
   loadEntries();
+  loadBudgetFromServer();
   initTheme();
   initProfilePic();
   applyLang();
