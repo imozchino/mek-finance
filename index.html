@@ -192,6 +192,20 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 
 /* Notification banner */
 .notif-banner{background:var(--amber-bg);border:1px solid #E0B060;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--amber);margin-bottom:14px;display:none;}
+/* Portfolio history chart */
+.port-chart-wrap{width:100%;overflow:hidden;}
+.port-chart-svg{width:100%;height:120px;display:block;}
+.port-chart-empty{font-size:12px;color:var(--text-3);text-align:center;padding:20px 0;}
+/* Big bills editor */
+.bills-editor-row{display:grid;grid-template-columns:80px 1fr 2fr auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;}
+.bills-editor-row:last-child{border-bottom:none;}
+.bills-input{font-family:var(--sans);font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);outline:none;width:100%;}
+.bills-input:focus{border-color:var(--blue);}
+/* Recurring entries */
+.rec-row{display:grid;grid-template-columns:1fr 80px 70px 50px auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px;}
+.rec-row:last-child{border-bottom:none;}
+.rec-input{font-family:var(--sans);font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);outline:none;width:100%;}
+.rec-input:focus{border-color:var(--blue);}
 /* Responsive */
 @media(max-width:600px){
   .page{padding:20px 14px 70px;}
@@ -433,6 +447,17 @@ const STRINGS={
     ye_big_bills:'บิลก้อนใหญ่ทั้งปี',ye_big_bills_sub:'บัตร KBANK + SCB + เทอม ส.ค. + เทอม ธ.ค.',ye_final:'ยอดคงเหลือปลาย ธ.ค.',
     // Month dropdown
     m6:'มิถุนายน 2026',m7:'กรกฎาคม 2026',m8:'สิงหาคม 2026',m9:'กันยายน 2026',m10:'ตุลาคม 2026',m11:'พฤศจิกายน 2026',m12:'ธันวาคม 2026',
+    // Category budget alert
+    cat_near_limit:'ใกล้เต็ม',
+    // Big bills editor
+    bills_edit_title:'แก้ไขบิลก้อนใหญ่',bills_amt_ph:'จำนวน (฿)',bills_label_ph:'รายการ',bills_save:'บันทึก',
+    // Recurring
+    recurring_title:'รายการประจำเดือน',recurring_hint:'เพิ่มเข้า Tracker อัตโนมัติทุกต้นเดือน',
+    rec_desc_ph:'รายการ',rec_day_ph:'วันที่ (1-31)',rec_add_btn:'+ เพิ่ม',rec_del_btn:'ลบ',
+    rec_added:'✅ เพิ่มรายการประจำ {n} รายการแล้ว',
+    // Portfolio chart
+    port_history_title:'ประวัติมูลค่า Portfolio',port_no_history:'กด Refresh เพื่อเริ่มบันทึกประวัติ',
+    port_cost_basis:'ต้นทุน',
   },
   en:{
     tab_planner:'Planner',tab_tracker:'Tracker',tab_portfolio:'Portfolio',tab_settings:'Settings',
@@ -519,6 +544,17 @@ const STRINGS={
     ye_big_bills:'Annual Big Bills',ye_big_bills_sub:'KBANK + SCB cards + Aug tuition + Dec tuition',ye_final:'Dec Year-End Balance',
     // Month dropdown
     m6:'June 2026',m7:'July 2026',m8:'August 2026',m9:'September 2026',m10:'October 2026',m11:'November 2026',m12:'December 2026',
+    // Category budget alert
+    cat_near_limit:'Near limit',
+    // Big bills editor
+    bills_edit_title:'Edit Big Bills',bills_amt_ph:'Amount (฿)',bills_label_ph:'Description',bills_save:'Save',
+    // Recurring
+    recurring_title:'Recurring Entries',recurring_hint:'Auto-added to Tracker each month',
+    rec_desc_ph:'Description',rec_day_ph:'Day (1-31)',rec_add_btn:'+ Add',rec_del_btn:'Remove',
+    rec_added:'✅ Added {n} recurring entries',
+    // Portfolio chart
+    port_history_title:'Portfolio Value History',port_no_history:'Refresh to start recording history',
+    port_cost_basis:'Cost Basis',
   }
 };
 
@@ -840,6 +876,14 @@ async function fetchPrices(){
     status.textContent = tpl('port_updated_tpl',{t:now});
     renderPortfolio();
     savePortfolioToServer();
+    // snapshot for history chart — compute totals after renderPortfolio updated them
+    (function(){
+      var thH=holdings.filter(h=>h.market==='TH'),usH=holdings.filter(h=>h.market==='US');
+      var tv=0,tc=0;
+      thH.forEach(h=>{var p=livePrice[h.ticker]||h.avgCost;tv+=p*h.shares;tc+=h.avgCost*h.shares;});
+      usH.forEach(h=>{var p=livePrice[h.ticker]||h.avgCost;tv+=(p*h.shares*usdThb);tc+=(h.avgCost*h.shares*usdThb);});
+      if(tv>0)savePortfolioSnapshot(tv,tc);
+    })();
   } catch(e) {
     status.textContent = t('port_status_error');
     renderPortfolio();
@@ -1541,6 +1585,12 @@ function aiShowConfirm(entry){
     </div>
 
     <div class="card">
+      <div class="card-title" data-i18n="bills_edit_title">แก้ไขบิลก้อนใหญ่</div>
+      <div id="bills-editor-list"></div>
+      <button class="export-btn" style="margin-top:10px;width:fit-content;" onclick="saveBigBills()" data-i18n="bills_save">บันทึก</button>
+    </div>
+
+    <div class="card">
       <div class="card-title" data-i18n="yearend_title">ยอดคาดการณ์ปลาย ธ.ค. 2026</div>
       <table class="table">
         <tr><td data-i18n="ye_current_balance">เงินในบัญชีตอนนี้ (10 มิ.ย.)</td><td class="pos">+฿186,661</td></tr>
@@ -1726,6 +1776,19 @@ function aiShowConfirm(entry){
     </div>
 
     <div class="card">
+      <div class="card-title" data-i18n="recurring_title">รายการประจำเดือน</div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;" data-i18n="recurring_hint">เพิ่มเข้า Tracker อัตโนมัติทุกต้นเดือน</div>
+      <div id="rec-list"></div>
+      <div class="rec-row" style="border-bottom:none;margin-top:4px;">
+        <input class="rec-input" id="rec-new-desc" data-i18n-placeholder="rec_desc_ph" placeholder="รายการ"/>
+        <input class="rec-input" type="number" id="rec-new-amt" placeholder="฿" min="0"/>
+        <select class="rec-input" id="rec-new-cat"></select>
+        <input class="rec-input" type="number" id="rec-new-day" data-i18n-placeholder="rec_day_ph" placeholder="วันที่" min="1" max="31"/>
+        <button class="add-btn" style="white-space:nowrap;" onclick="addRecurring()" data-i18n="rec_add_btn">+ เพิ่ม</button>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-title" data-i18n="data_title">ข้อมูล</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
         <button class="export-btn" style="width:fit-content;" onclick="exportCSV()" data-i18n="export_all_csv">⬇ Export CSV ทุกรายการ</button>
@@ -1735,6 +1798,11 @@ function aiShowConfirm(entry){
   </div>
   <!-- PORTFOLIO -->
   <div class="tab-panel" id="tab-portfolio">
+    <div class="card" id="port-history-card" style="display:none;">
+      <div class="port-section-title" data-i18n="port_history_title">ประวัติมูลค่า Portfolio</div>
+      <div class="port-chart-wrap"><svg class="port-chart-svg" id="port-chart-svg"></svg></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);margin-top:4px;" id="port-chart-labels"></div>
+    </div>
     <div class="port-refresh-row">
       <div class="port-status" id="port-status" data-i18n="port_status_init">กด Refresh เพื่อดึงราคาล่าสุด (delay ~15 นาที)</div>
       <button class="port-refresh-btn" id="port-refresh-btn" onclick="fetchPrices()">
@@ -1998,15 +2066,16 @@ const Q='?apikey='+SUPABASE_KEY;
 
 // PLANNER
 const SALARY=47967,TENNIS=3600,AIRPOD=849,PARKING=2140,START=186661,MONTHS=7;
-const BIG_BILLS=[
-  {month:'มิถุนายน',bill:55221,labelKey:'bill_jun'},
-  {month:'กรกฎาคม',bill:15276,labelKey:'bill_jul'},
-  {month:'สิงหาคม',bill:81500,labelKey:'bill_aug'},
-  {month:'กันยายน',bill:0,labelKey:''},
-  {month:'ตุลาคม',bill:0,labelKey:''},
-  {month:'พฤศจิกายน',bill:0,labelKey:''},
-  {month:'ธันวาคม',bill:81500,labelKey:'bill_dec'},
+const DEFAULT_bigBills=[
+  {month:'มิถุนายน',bill:55221,label:'บัตร KBANK + คืนเพื่อน'},
+  {month:'กรกฎาคม',bill:15276,label:'บัตร SCB + AirPod งวด 2'},
+  {month:'สิงหาคม',bill:81500,label:'ค่าเทอม ปี 2 เทอม 1'},
+  {month:'กันยายน',bill:0,label:''},
+  {month:'ตุลาคม',bill:0,label:''},
+  {month:'พฤศจิกายน',bill:0,label:''},
+  {month:'ธันวาคม',bill:81500,label:'ค่าเทอม ปี 2 เทอม 2'},
 ];
+let bigBills=DEFAULT_bigBills.map(b=>({...b}));
 const CAT_COLORS={อาหาร:'#1A7A56',เครื่องดื่ม:'#6B4C9A',เดินทาง:'#1B5FA8',ช้อปปิ้ง:'#7B3FA8',สังสรรค์:'#9A6200',สุขภาพ:'#C0392B','บิล/สมาชิก':'#2E86AB',การศึกษา:'#5A4FCF',ออกกำลังกาย:'#16A085',อื่นๆ:'#6B6B65'};
 const MONTH_NAMES=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const ALL_CATS=Object.keys(CAT_COLORS);
@@ -2029,7 +2098,7 @@ function updateFromTarget(){
   // SALARY-fixed-living = (target - START + totalBills) / MONTHS
   // living = SALARY - fixed - (target - START + totalBills) / MONTHS
 
-  const totalBills = BIG_BILLS.reduce((s,m)=>s+m.bill, 0);
+  const totalBills = bigBills.reduce((s,m)=>s+m.bill, 0);
   const requiredNet = (target - START + totalBills) / MONTHS;
   const requiredLiving = SALARY - fixed - requiredNet;
 
@@ -2062,16 +2131,16 @@ function update(){
   netEl.className=net>=0?'pos':'neg';
   document.getElementById('progress-fill').style.width=Math.min(living/30000*100,100)+'%';
   let bal=START,html='';
-  BIG_BILLS.forEach(m=>{
+  bigBills.forEach(m=>{
     bal+=net-m.bill;
     const cls=bal<60000?'crit':bal<100000?'low':'safe';
-    const bHtml=m.bill>0?'<div style="color:var(--red)">−฿'+m.bill.toLocaleString()+'</div><div class="tl-bill">'+t(m.labelKey)+'</div>':'<span style="color:var(--text-3)">—</span>';
+    const bHtml=m.bill>0?'<div style="color:var(--red)">−฿'+m.bill.toLocaleString()+'</div><div class="tl-bill">'+(m.label||'')+'</div>':'<span style="color:var(--text-3)">—</span>';
     const nHtml=net>=0?'<span class="pos">+฿'+net.toLocaleString()+'</span>':'<span class="neg">−฿'+Math.abs(net).toLocaleString()+'</span>';
     html+='<div class="tl-row '+cls+'"><div class="tl-month">'+(currentLang==='en'?(MONTHS_TH_EN[m.month]||m.month):m.month)+'</div><div>'+bHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+fmt(bal)+'</div></div>';
   });
   document.getElementById('timeline-body').innerHTML=html;
   const totalSav=net*MONTHS;
-  const yearEnd=START+totalSav-BIG_BILLS.reduce((s,m)=>s+m.bill,0);
+  const yearEnd=START+totalSav-bigBills.reduce((s,m)=>s+m.bill,0);
   const diff=yearEnd-target;
   document.getElementById('ye-savings').textContent=(totalSav>=0?'+':'−')+'฿'+Math.abs(totalSav).toLocaleString('th-TH');
   const yeEl=document.getElementById('ye-total');
@@ -2085,40 +2154,187 @@ function update(){
   else if(diff>-30000){amtEl.className='result-amount ok';pillEl.className='pill ok';pillTxt.textContent=t('plan_pill_near');alertEl.className='alert warn';alertEl.textContent=tpl('plan_alert_warn_tpl',{end:fmt(yearEnd),diff:fmt(Math.abs(diff))});pfill.style.background='#9A6200';}
   else{amtEl.className='result-amount tight';pillEl.className='pill tight';pillTxt.textContent=t('plan_pill_below');alertEl.className='alert bad';alertEl.textContent=tpl('plan_alert_bad_tpl',{end:fmt(yearEnd)});pfill.style.background='#C0392B';}
   window._budget=living;
-  localStorage.setItem('mek_budget', living);
+  localStorage.setItem('mek_budget',living);
+  localStorage.setItem('mek_target',target);
+  localStorage.setItem('mek_dca',dca);
   clearTimeout(window._budgetSaveTimer);
-  window._budgetSaveTimer=setTimeout(()=>saveBudgetToServer(living),1000);
+  window._budgetSaveTimer=setTimeout(()=>{saveSettingToServer('mek_budget',living);saveSettingToServer('mek_target',target);saveSettingToServer('mek_dca',dca);},1000);
   renderCatBudgetSettings();
 
 }
 
 let _budgetSaveTimer=null;
-async function saveBudgetToServer(v){
+async function saveSettingToServer(key,value){
   try{
     await fetch(API+'/settings'+Q+'&on_conflict=key',{
       method:'POST',
       headers:{...HEADERS,'Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:JSON.stringify({key:'mek_budget',value:String(v)})
+      body:JSON.stringify({key,value:String(value)})
     });
   }catch(e){}
 }
 
-async function loadBudgetFromServer(){
+// — Planner settings (budget / target / DCA) —
+async function loadPlannerSettings(){
   try{
-    const r=await fetch(API+'/settings'+Q+'&key=eq.mek_budget&select=value',{headers:HEADERS});
+    const r=await fetch(API+'/settings'+Q+'&key=in.(mek_budget,mek_target,mek_dca,big_bills)&select=key,value',{headers:HEADERS});
+    if(!r.ok)return;
+    const rows=await r.json();
+    let changed=false;
+    rows.forEach(row=>{
+      if(row.key==='mek_budget'){const v=parseInt(row.value);if(v){localStorage.setItem('mek_budget',v);window._budget=v;var sl=document.getElementById('living-slider');if(sl)sl.value=v;changed=true;}}
+      if(row.key==='mek_target'){const v=parseInt(row.value);if(v){localStorage.setItem('mek_target',v);var sl=document.getElementById('target-slider');if(sl)sl.value=v;changed=true;}}
+      if(row.key==='mek_dca'){const v=parseInt(row.value);if(v){localStorage.setItem('mek_dca',v);var sl=document.getElementById('dca-slider');if(sl)sl.value=v;changed=true;}}
+      if(row.key==='big_bills'){try{const v=JSON.parse(row.value);if(Array.isArray(v)&&v.length===7){bigBills=v;changed=true;renderBigBillsEditor();}}catch(e){}}
+    });
+    if(changed)update();
+  }catch(e){}
+}
+
+// — Big bills editor —
+const BILL_MONTHS=['มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function renderBigBillsEditor(){
+  const el=document.getElementById('bills-editor-list');
+  if(!el)return;
+  el.innerHTML=bigBills.map((b,i)=>{
+    const mLabel=currentLang==='en'?(MONTHS_TH_EN[b.month]||b.month):b.month;
+    return '<div class="bills-editor-row">'
+      +'<div style="font-size:12px;font-weight:500;color:var(--text-2);">'+mLabel+'</div>'
+      +'<input class="bills-input" type="number" id="bb-amt-'+i+'" value="'+(b.bill||'')+'" placeholder="'+t('bills_amt_ph')+'" min="0"/>'
+      +'<input class="bills-input" type="text" id="bb-lbl-'+i+'" value="'+(b.label||'')+'" placeholder="'+t('bills_label_ph')+'"/>'
+      +'</div>';
+  }).join('');
+}
+async function saveBigBills(){
+  bigBills.forEach((b,i)=>{
+    const amt=parseInt(document.getElementById('bb-amt-'+i)?.value)||0;
+    const lbl=(document.getElementById('bb-lbl-'+i)?.value||'').trim();
+    b.bill=amt; b.label=lbl;
+  });
+  await saveSettingToServer('big_bills',JSON.stringify(bigBills));
+  update();
+}
+
+// — Recurring entries —
+let recurringTemplates=[];
+async function loadRecurringTemplates(){
+  try{
+    const r=await fetch(API+'/settings'+Q+'&key=eq.recurring_templates&select=value',{headers:HEADERS});
     if(!r.ok)return;
     const data=await r.json();
-    if(data&&data[0]&&data[0].value){
-      const v=parseInt(data[0].value);
-      if(v&&v!==parseInt(localStorage.getItem('mek_budget'))){
-        localStorage.setItem('mek_budget',v);
-        window._budget=v;
-        var sl=document.getElementById('living-slider');
-        if(sl)sl.value=v;
-        update();
-      }
-    }
+    if(data&&data[0]&&data[0].value){try{recurringTemplates=JSON.parse(data[0].value);}catch(e){}}
   }catch(e){}
+  renderRecurringUI();
+}
+async function saveRecurringTemplates(){
+  await saveSettingToServer('recurring_templates',JSON.stringify(recurringTemplates));
+}
+function renderRecurringUI(){
+  const el=document.getElementById('rec-list');
+  if(!el)return;
+  // populate cat select for new row
+  const catSel=document.getElementById('rec-new-cat');
+  if(catSel&&catSel.options.length===0){ALL_CATS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=catD(c);catSel.appendChild(o);});}
+  if(recurringTemplates.length===0){el.innerHTML='<div style="font-size:12px;color:var(--text-3);padding:6px 0;" data-i18n="no_entries_month">ยังไม่มีรายการ</div>';return;}
+  el.innerHTML=recurringTemplates.map((r,i)=>'<div class="rec-row">'
+    +'<div style="font-weight:500;">'+r.desc+'<div style="font-size:10px;color:var(--text-3);">'+catD(r.cat)+'</div></div>'
+    +'<div style="font-family:var(--mono);font-size:12px;color:var(--red);">−฿'+Number(r.amt).toLocaleString()+'</div>'
+    +'<div style="font-size:11px;color:var(--text-3);">Day '+r.day+'</div>'
+    +'<div></div>'
+    +'<button class="del-btn" onclick="removeRecurring('+i+')">✕</button>'
+    +'</div>').join('');
+}
+async function addRecurring(){
+  const desc=document.getElementById('rec-new-desc').value.trim();
+  const amt=parseFloat(document.getElementById('rec-new-amt').value);
+  const cat=document.getElementById('rec-new-cat').value;
+  const day=parseInt(document.getElementById('rec-new-day').value)||1;
+  if(!desc||!amt||!cat){return;}
+  recurringTemplates.push({id:Date.now(),desc,cat,amt,day});
+  await saveRecurringTemplates();
+  document.getElementById('rec-new-desc').value='';
+  document.getElementById('rec-new-amt').value='';
+  document.getElementById('rec-new-day').value='';
+  renderRecurringUI();
+}
+async function removeRecurring(i){
+  recurringTemplates.splice(i,1);
+  await saveRecurringTemplates();
+  renderRecurringUI();
+}
+async function autoAddRecurring(){
+  if(recurringTemplates.length===0)return;
+  const now=thaiDate();
+  const monthKey=now.getFullYear()+'-'+(now.getMonth()+1);
+  const doneKey='mek_rec_done_'+monthKey;
+  if(localStorage.getItem(doneKey))return;
+  const todayStr=thaiDateStr(0);
+  let added=0;
+  for(const r of recurringTemplates){
+    const day=Math.min(r.day,new Date(now.getFullYear(),now.getMonth()+1,0).getDate());
+    const entryDate=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    const exists=allEntries.some(e=>e.description===r.desc&&e.cat===r.cat&&e.entry_date.slice(0,7)===monthKey);
+    if(!exists){
+      await fetch(API+'/entries'+Q,{method:'POST',headers:{...HEADERS,'Prefer':'return=minimal'},body:JSON.stringify({description:r.desc,amt:r.amt,cat:r.cat,entry_date:entryDate,note:'[recurring]'})});
+      added++;
+    }
+  }
+  localStorage.setItem(doneKey,'1');
+  if(added>0){
+    setSyncStatus(tpl('rec_added',{n:added}),'#1A7A56');
+    await loadEntries();
+  }
+}
+
+// — Portfolio P&L history —
+let portSnapshots=[];
+async function loadPortfolioSnapshots(){
+  try{
+    const r=await fetch(API+'/settings'+Q+'&key=eq.port_snapshots&select=value',{headers:HEADERS});
+    if(!r.ok)return;
+    const data=await r.json();
+    if(data&&data[0]&&data[0].value){try{portSnapshots=JSON.parse(data[0].value);}catch(e){}}
+  }catch(e){}
+  renderPortfolioChart();
+}
+async function savePortfolioSnapshot(val,cost){
+  const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'});
+  portSnapshots=portSnapshots.filter(s=>s.d!==today);
+  portSnapshots.push({d:today,v:Math.round(val),c:Math.round(cost)});
+  portSnapshots=portSnapshots.slice(-90);
+  await saveSettingToServer('port_snapshots',JSON.stringify(portSnapshots));
+  renderPortfolioChart();
+}
+function renderPortfolioChart(){
+  const card=document.getElementById('port-history-card');
+  const svg=document.getElementById('port-chart-svg');
+  const lblEl=document.getElementById('port-chart-labels');
+  if(!card||!svg)return;
+  if(portSnapshots.length<2){card.style.display='block';svg.innerHTML='<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="var(--text-3)" font-size="12">'+t('port_no_history')+'</text>';if(lblEl)lblEl.innerHTML='';return;}
+  card.style.display='block';
+  const W=svg.clientWidth||320,H=120,padL=52,padR=8,padT=8,padB=20;
+  const chartW=W-padL-padR,chartH=H-padT-padB;
+  const vals=portSnapshots.map(s=>s.v);
+  const costs=portSnapshots.map(s=>s.c);
+  const minV=Math.min(...vals,...costs)*0.97;
+  const maxV=Math.max(...vals,...costs)*1.03;
+  const range=maxV-minV||1;
+  function px(i){return padL+i/(portSnapshots.length-1)*chartW;}
+  function py(v){return padT+chartH-(v-minV)/range*chartH;}
+  const valPts=portSnapshots.map((s,i)=>px(i)+','+py(s.v)).join(' ');
+  const costPts=portSnapshots.map((s,i)=>px(i)+','+py(s.c)).join(' ');
+  const lastVal=portSnapshots[portSnapshots.length-1].v;
+  const lastCost=portSnapshots[portSnapshots.length-1].c;
+  const pnlColor=lastVal>=lastCost?'#1A7A56':'#C0392B';
+  function fmtK(v){return v>=10000?'฿'+(v/1000).toFixed(0)+'k':'฿'+v.toLocaleString();}
+  svg.innerHTML=
+    '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(padT+chartH)+'" stroke="var(--border)" stroke-width="1"/>'
+    +'<text x="'+(padL-4)+'" y="'+(padT+4)+'" text-anchor="end" fill="var(--text-3)" font-size="9">'+fmtK(maxV)+'</text>'
+    +'<text x="'+(padL-4)+'" y="'+(padT+chartH)+'" text-anchor="end" fill="var(--text-3)" font-size="9">'+fmtK(minV)+'</text>'
+    +'<polyline points="'+costPts+'" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4,3"/>'
+    +'<polyline points="'+valPts+'" fill="none" stroke="'+pnlColor+'" stroke-width="2"/>'
+    +'<circle cx="'+px(portSnapshots.length-1)+'" cy="'+py(lastVal)+'" r="3" fill="'+pnlColor+'"/>';
+  if(lblEl)lblEl.innerHTML='<span>'+portSnapshots[0].d+'</span><span style="font-size:10px;color:var(--text-3);">— '+t('port_cost_basis')+'</span><span>'+portSnapshots[portSnapshots.length-1].d+'</span>';
 }
 
 // SYNC STATUS
@@ -2331,12 +2547,17 @@ function renderTracker(){
   Object.entries(cats).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt])=>{
     const color=CAT_COLORS[cat]||'#6B6B65';
     const bud=catBudgets[cat]||0;
-    const budText=bud>0?' / ฿'+bud.toLocaleString():'';
+    const catPct=bud>0?amt/bud*100:0;
     const over=bud>0&&amt>bud;
+    const near=bud>0&&catPct>=80&&!over;
+    const budText=bud>0?' / ฿'+bud.toLocaleString():'';
+    const barW=bud>0?Math.min(catPct,100):(maxAmt>0?amt/maxAmt*100:0);
+    const barColor=over?'#C0392B':near?'#9A6200':color;
+    const badge=over?' ⚠️':near?' <span style="font-size:10px;color:var(--amber);">'+t('cat_near_limit')+'</span>':'';
      catHtml+='<div class="cat-row">'
-       +'<div class="cat-name">'+catD(cat)+'</div>'
-       +'<div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:'+(maxAmt>0?amt/maxAmt*100:0)+'%;background:'+color+'"></div></div>'
-       +'<div class="cat-info" style="'+(over?'color:var(--red)':'')+'">฿'+amt.toLocaleString()+budText+(over?' ⚠️':'')+'</div>'
+       +'<div class="cat-name">'+catD(cat)+badge+'</div>'
+       +'<div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:'+barW+'%;background:'+barColor+'"></div></div>'
+       +'<div class="cat-info" style="'+(over?'color:var(--red)':near?'color:var(--amber)':'')+'">฿'+amt.toLocaleString()+budText+(over?' ⚠️':'')+'</div>'
        +'</div>';
   });
   document.getElementById('cat-breakdown').innerHTML=catHtml;
@@ -2425,9 +2646,9 @@ function switchTab(name,btn){
   const titleEl = document.getElementById('header-title-text');
   if(titleEl) titleEl.textContent = TAB_TITLES[name] || name;
   if(name==='tracker')loadEntries();
-  if(name==='settings')renderCatBudgetSettings();
-  if(name==='planner')initPlannerLock();
-  if(name==='portfolio'){loadCachedPrices();renderPortfolio();}
+  if(name==='settings'){renderCatBudgetSettings();renderRecurringUI();}
+  if(name==='planner'){initPlannerLock();renderBigBillsEditor();}
+  if(name==='portfolio'){loadCachedPrices();renderPortfolio();renderPortfolioChart();}
 }
 
 // INIT
@@ -2446,21 +2667,28 @@ document.addEventListener('DOMContentLoaded',()=>{
     var livingSl=document.getElementById('living-slider');
     if(livingSl)livingSl.value=savedBudget;
   }
-  loadEntries();
-  loadBudgetFromServer();
+  loadEntries().then(()=>autoAddRecurring());
+  loadPlannerSettings();
+  loadRecurringTemplates();
+  loadPortfolioSnapshots();
   initTheme();
   initProfilePic();
   applyLang();
   updateLangBtns();
   renderMonthDropdown();
+  renderBigBillsEditor();
   // PWA install hint
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._pwaPrompt=e;});
 });
 
-// Restore saved budget into slider before first render so update() doesn't overwrite it
+// Restore saved planner sliders before first render
 (function(){
   var _b=parseInt(localStorage.getItem('mek_budget'));
+  var _t=parseInt(localStorage.getItem('mek_target'));
+  var _d=parseInt(localStorage.getItem('mek_dca'));
   if(_b){var sl=document.getElementById('living-slider');if(sl)sl.value=_b;}
+  if(_t){var sl=document.getElementById('target-slider');if(sl)sl.value=_t;}
+  if(_d){var sl=document.getElementById('dca-slider');if(sl)sl.value=_d;}
   update();
 })();
 </script>
