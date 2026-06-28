@@ -2298,10 +2298,14 @@ async function loadPortfolioSnapshots(){
   renderPortfolioChart();
 }
 async function savePortfolioSnapshot(val,cost){
-  const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'});
-  portSnapshots=portSnapshots.filter(s=>s.d!==today);
-  portSnapshots.push({d:today,v:Math.round(val),c:Math.round(cost)});
-  portSnapshots=portSnapshots.slice(-90);
+  const now=new Date();
+  const ts=now.toLocaleString('en-CA',{timeZone:'Asia/Bangkok',hour12:false}).replace(',','');
+  const d=now.toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'});
+  // dedup: if last snapshot was within 30 minutes, replace it
+  const last=portSnapshots[portSnapshots.length-1];
+  if(last&&(new Date()-new Date(last.ts||last.d))<30*60*1000){portSnapshots.pop();}
+  portSnapshots.push({d,ts,v:Math.round(val),c:Math.round(cost)});
+  portSnapshots=portSnapshots.slice(-60);
   await saveSettingToServer('port_snapshots',JSON.stringify(portSnapshots));
   renderPortfolioChart();
 }
@@ -2310,31 +2314,52 @@ function renderPortfolioChart(){
   const svg=document.getElementById('port-chart-svg');
   const lblEl=document.getElementById('port-chart-labels');
   if(!card||!svg)return;
-  if(portSnapshots.length<2){card.style.display='block';svg.innerHTML='<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="var(--text-3)" font-size="12">'+t('port_no_history')+'</text>';if(lblEl)lblEl.innerHTML='';return;}
   card.style.display='block';
-  const W=svg.clientWidth||320,H=120,padL=52,padR=8,padT=8,padB=20;
+  if(portSnapshots.length===0){
+    svg.innerHTML='<text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="var(--text-3)" font-size="12">'+t('port_no_history')+'</text>';
+    if(lblEl)lblEl.innerHTML='';return;
+  }
+  const W=svg.clientWidth||320,H=120,padL=52,padR=8,padT=12,padB=20;
   const chartW=W-padL-padR,chartH=H-padT-padB;
   const vals=portSnapshots.map(s=>s.v);
   const costs=portSnapshots.map(s=>s.c);
   const minV=Math.min(...vals,...costs)*0.97;
   const maxV=Math.max(...vals,...costs)*1.03;
   const range=maxV-minV||1;
-  function px(i){return padL+i/(portSnapshots.length-1)*chartW;}
+  const n=portSnapshots.length;
+  function px(i){return n===1?padL+chartW/2:padL+i/(n-1)*chartW;}
   function py(v){return padT+chartH-(v-minV)/range*chartH;}
-  const valPts=portSnapshots.map((s,i)=>px(i)+','+py(s.v)).join(' ');
-  const costPts=portSnapshots.map((s,i)=>px(i)+','+py(s.c)).join(' ');
-  const lastVal=portSnapshots[portSnapshots.length-1].v;
-  const lastCost=portSnapshots[portSnapshots.length-1].c;
+  const lastVal=vals[n-1];
+  const lastCost=costs[n-1];
   const pnlColor=lastVal>=lastCost?'#1A7A56':'#C0392B';
   function fmtK(v){return v>=10000?'฿'+(v/1000).toFixed(0)+'k':'฿'+v.toLocaleString();}
-  svg.innerHTML=
+  const pnlAmt=lastVal-lastCost;
+  const pnlPct=lastCost>0?(pnlAmt/lastCost*100):0;
+  const pnlStr=(pnlAmt>=0?'+':'')+fmtK(pnlAmt)+' ('+(pnlPct>=0?'+':'')+pnlPct.toFixed(1)+'%)';
+  let inner=
     '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(padT+chartH)+'" stroke="var(--border)" stroke-width="1"/>'
-    +'<text x="'+(padL-4)+'" y="'+(padT+4)+'" text-anchor="end" fill="var(--text-3)" font-size="9">'+fmtK(maxV)+'</text>'
-    +'<text x="'+(padL-4)+'" y="'+(padT+chartH)+'" text-anchor="end" fill="var(--text-3)" font-size="9">'+fmtK(minV)+'</text>'
-    +'<polyline points="'+costPts+'" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4,3"/>'
-    +'<polyline points="'+valPts+'" fill="none" stroke="'+pnlColor+'" stroke-width="2"/>'
-    +'<circle cx="'+px(portSnapshots.length-1)+'" cy="'+py(lastVal)+'" r="3" fill="'+pnlColor+'"/>';
-  if(lblEl)lblEl.innerHTML='<span>'+portSnapshots[0].d+'</span><span style="font-size:10px;color:var(--text-3);">— '+t('port_cost_basis')+'</span><span>'+portSnapshots[portSnapshots.length-1].d+'</span>';
+    +'<text x="'+(padL-4)+'" y="'+(padT+5)+'" text-anchor="end" fill="var(--text-3)" font-size="9">'+fmtK(maxV)+'</text>'
+    +'<text x="'+(padL-4)+'" y="'+(padT+chartH)+'" text-anchor="end" fill="var(--text-3)" font-size="9">'+fmtK(minV)+'</text>';
+  if(n===1){
+    // single point — just show dots and value label
+    inner+='<circle cx="'+px(0)+'" cy="'+py(lastCost)+'" r="4" fill="var(--border)"/>'
+      +'<circle cx="'+px(0)+'" cy="'+py(lastVal)+'" r="5" fill="'+pnlColor+'"/>'
+      +'<text x="'+(px(0)+8)+'" y="'+(py(lastVal)+4)+'" fill="'+pnlColor+'" font-size="10">'+fmtK(lastVal)+'</text>';
+  } else {
+    const costPts=portSnapshots.map((s,i)=>px(i)+','+py(s.c)).join(' ');
+    const valPts=portSnapshots.map((s,i)=>px(i)+','+py(s.v)).join(' ');
+    inner+='<polyline points="'+costPts+'" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-dasharray="4,3"/>'
+      +'<polyline points="'+valPts+'" fill="none" stroke="'+pnlColor+'" stroke-width="2"/>'
+      +'<circle cx="'+px(n-1)+'" cy="'+py(lastVal)+'" r="3.5" fill="'+pnlColor+'"/>';
+  }
+  svg.innerHTML=inner;
+  if(lblEl){
+    const firstDate=portSnapshots[0].d;
+    const lastDate=portSnapshots[n-1].d;
+    lblEl.innerHTML='<span style="color:var(--text-3);font-size:10px;">'+firstDate+'</span>'
+      +'<span style="font-size:11px;font-weight:600;color:'+pnlColor+';">'+pnlStr+'</span>'
+      +'<span style="color:var(--text-3);font-size:10px;">'+lastDate+'</span>';
+  }
 }
 
 // SYNC STATUS
