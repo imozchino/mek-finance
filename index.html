@@ -2515,29 +2515,30 @@ function renderTracker(){
   const selDay = document.getElementById('view-day')?.value || 'all';
   const displayEntries = selDay === 'all' ? cachedEntries : cachedEntries.filter(e=>e.entry_date===selDay);
   if(cachedEntries.length===0){container.innerHTML='<div class="empty-state">'+t('no_entries_month')+'</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
-  if(displayEntries.length===0){container.innerHTML='<div class="empty-state">'+t('no_entries_day')+'</div>';document.getElementById('cat-card').style.display='none';document.getElementById('chart-card').style.display='none';document.getElementById('week-card').style.display='none';document.getElementById('compare-card').style.display='none';return;}
-  let html='<div class="entry-row hdr"><div>'+t('col_date')+'</div><div>'+t('col_item')+'</div><div style="text-align:right">'+t('col_amount')+'</div><div>'+t('col_cat')+'</div><div></div></div>';
-  displayEntries.forEach(e=>{
-    const entryId=e.id;
-    const d=new Date(e.entry_date+'T00:00:00');
-    const dateStr=d.getDate()+' '+mName(d.getMonth()+1);
-    const color=CAT_COLORS[e.cat]||'#6B6B65';
-    const catExceed=catBudgets[e.cat]>0&&cachedEntries.filter(x=>x.cat===e.cat).reduce((s,x)=>s+Number(x.amt),0)>catBudgets[e.cat];
-    var eJson = JSON.stringify(e).replace(/'/g,"\\'");
-    var exceedBadge = catExceed?' <span style="font-size:10px;color:var(--red)">'+t('exceed_badge')+'</span>':'';
-    var noteHtml = e.note?'<div class="entry-note">'+e.note+'</div>':'';
-    html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light);">'
-      +'<div style="flex:1;min-width:0;">'
-        +'<div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.description+exceedBadge+'</div>'
-        +'<span style="font-size:10px;padding:1px 7px;border-radius:6px;background:'+color+'18;color:'+color+';display:inline-block;margin-top:3px;">'+catD(e.cat)+'</span>'
-        +noteHtml
-      +'</div>'
-      +'<div style="font-family:var(--mono);font-size:13px;color:var(--red);white-space:nowrap;">−฿'+Number(e.amt).toLocaleString()+'</div>'
-      +'<button class="edit-btn" onclick="openEditById('+e.id+')" style="padding:2px 4px;font-size:14px;">✏️</button>'
-      +'<button class="del-btn" onclick="deleteEntry('+e.id+')">✕</button>'
-      +'</div>';
-  });
-  container.innerHTML=html;
+  if(displayEntries.length===0){
+    container.innerHTML='<div class="empty-state">'+t('no_entries_day')+'</div>';
+  } else {
+    let html='<div class="entry-row hdr"><div>'+t('col_date')+'</div><div>'+t('col_item')+'</div><div style="text-align:right">'+t('col_amount')+'</div><div>'+t('col_cat')+'</div><div></div></div>';
+    displayEntries.forEach(e=>{
+      const d=new Date(e.entry_date+'T00:00:00');
+      const dateStr=d.getDate()+' '+mName(d.getMonth()+1);
+      const color=CAT_COLORS[e.cat]||'#6B6B65';
+      const catExceed=catBudgets[e.cat]>0&&cachedEntries.filter(x=>x.cat===e.cat).reduce((s,x)=>s+Number(x.amt),0)>catBudgets[e.cat];
+      var exceedBadge=catExceed?' <span style="font-size:10px;color:var(--red)">'+t('exceed_badge')+'</span>':'';
+      var noteHtml=e.note?'<div class="entry-note">'+e.note+'</div>':'';
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light);">'
+        +'<div style="flex:1;min-width:0;">'
+          +'<div style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.description+exceedBadge+'</div>'
+          +'<span style="font-size:10px;padding:1px 7px;border-radius:6px;background:'+color+'18;color:'+color+';display:inline-block;margin-top:3px;">'+catD(e.cat)+'</span>'
+          +noteHtml
+        +'</div>'
+        +'<div style="font-family:var(--mono);font-size:13px;color:var(--red);white-space:nowrap;">−฿'+Number(e.amt).toLocaleString()+'</div>'
+        +'<button class="edit-btn" onclick="openEditById('+e.id+')" style="padding:2px 4px;font-size:14px;">✏️</button>'
+        +'<button class="del-btn" onclick="deleteEntry('+e.id+')">✕</button>'
+        +'</div>';
+    });
+    container.innerHTML=html;
+  }
 
   // Cat breakdown
   const cats={};
