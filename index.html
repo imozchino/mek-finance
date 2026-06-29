@@ -2076,6 +2076,7 @@ const DEFAULT_bigBills=[
   {month:'ธันวาคม',bill:81500,label:'ค่าเทอม ปี 2 เทอม 2'},
 ];
 let bigBills=DEFAULT_bigBills.map(b=>({...b}));
+const MONTH_NUM_MAP={'มิถุนายน':6,'กรกฎาคม':7,'สิงหาคม':8,'กันยายน':9,'ตุลาคม':10,'พฤศจิกายน':11,'ธันวาคม':12};
 const CAT_COLORS={อาหาร:'#1A7A56',เครื่องดื่ม:'#6B4C9A',เดินทาง:'#1B5FA8',ช้อปปิ้ง:'#7B3FA8',สังสรรค์:'#9A6200',สุขภาพ:'#C0392B','บิล/สมาชิก':'#2E86AB',การศึกษา:'#5A4FCF',ออกกำลังกาย:'#16A085',อื่นๆ:'#6B6B65'};
 const MONTH_NAMES=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const ALL_CATS=Object.keys(CAT_COLORS);
@@ -2130,19 +2131,31 @@ function update(){
   netEl.textContent=(net>=0?'+':'−')+'฿'+Math.abs(net).toLocaleString('th-TH');
   netEl.className=net>=0?'pos':'neg';
   document.getElementById('progress-fill').style.width=Math.min(living/30000*100,100)+'%';
-  let bal=START,html='';
+  const nowMonth=new Date().getMonth()+1;
+  let bal=START,html='',totalActualSav=0;
   bigBills.forEach(m=>{
-    bal+=net-m.bill;
+    const mNum=MONTH_NUM_MAP[m.month]||0;
+    const isPast=mNum>0&&mNum<nowMonth;
+    let monthNet=net,actualSpent=null;
+    if(isPast&&allEntries.length>0){
+      const prefix='2026-'+String(mNum).padStart(2,'0');
+      actualSpent=allEntries.filter(e=>e.entry_date&&e.entry_date.startsWith(prefix)).reduce((s,e)=>s+Number(e.amt),0);
+      monthNet=SALARY-fixed-actualSpent;
+    }
+    bal+=monthNet-m.bill;
+    totalActualSav+=monthNet;
     const cls=bal<60000?'crit':bal<100000?'low':'safe';
     const bHtml=m.bill>0?'<div style="color:var(--red)">−฿'+m.bill.toLocaleString()+'</div><div class="tl-bill">'+(m.label||'')+'</div>':'<span style="color:var(--text-3)">—</span>';
-    const nHtml=net>=0?'<span class="pos">+฿'+net.toLocaleString()+'</span>':'<span class="neg">−฿'+Math.abs(net).toLocaleString()+'</span>';
-    html+='<div class="tl-row '+cls+'"><div class="tl-month">'+(currentLang==='en'?(MONTHS_TH_EN[m.month]||m.month):m.month)+'</div><div>'+bHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+fmt(bal)+'</div></div>';
+    const badge=isPast&&allEntries.length>0
+      ?'<span style="font-size:9px;background:#1A7A5618;color:#1A7A56;border-radius:4px;padding:1px 5px;margin-left:4px;">จริง</span>'
+      :'<span style="font-size:9px;background:var(--border-light);color:var(--text-3);border-radius:4px;padding:1px 5px;margin-left:4px;">คาด</span>';
+    const nHtml=monthNet>=0?'<span class="pos">+฿'+Math.round(monthNet).toLocaleString()+'</span>':'<span class="neg">−฿'+Math.abs(Math.round(monthNet)).toLocaleString()+'</span>';
+    html+='<div class="tl-row '+cls+'"><div class="tl-month">'+(currentLang==='en'?(MONTHS_TH_EN[m.month]||m.month):m.month)+badge+'</div><div>'+bHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+fmt(bal)+'</div></div>';
   });
   document.getElementById('timeline-body').innerHTML=html;
-  const totalSav=net*MONTHS;
-  const yearEnd=START+totalSav-bigBills.reduce((s,m)=>s+m.bill,0);
+  const yearEnd=START+totalActualSav-bigBills.reduce((s,m)=>s+m.bill,0);
   const diff=yearEnd-target;
-  document.getElementById('ye-savings').textContent=(totalSav>=0?'+':'−')+'฿'+Math.abs(totalSav).toLocaleString('th-TH');
+  document.getElementById('ye-savings').textContent=(totalActualSav>=0?'+':'−')+'฿'+Math.abs(Math.round(totalActualSav)).toLocaleString('th-TH');
   const yeEl=document.getElementById('ye-total');
   yeEl.textContent=fmt(yearEnd);yeEl.className=yearEnd>=target?'pos':yearEnd>=0?'warn':'neg';
   const yePct=Math.min(Math.max(yearEnd/200000*100,0),100);
