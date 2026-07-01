@@ -439,7 +439,7 @@ const STRINGS={
     cf_item:'รายการ',cf_amount:'จำนวน',
     cf_salary:'เงินเดือน net (27 ทุกเดือน)',cf_fixed_deduct:'หัก Fixed costs',
     cf_fixed_sub:'เทนนิส + AirPod + จอดรถ + DCA',cf_living_deduct:'หัก ค่าใช้จ่ายประจำวัน',cf_net_saving:'เหลือสะสม/เดือน',
-    tl_title:'Timeline มิ.ย.–ธ.ค. 2026',tl_month:'เดือน',tl_bill:'บิลก้อนใหญ่',tl_net:'สะสมสุทธิ',tl_balance:'ยอดปิด',
+    tl_title:'Timeline มิ.ย.–ธ.ค. 2026',tl_month:'เดือน',tl_bill:'บิลก้อนใหญ่',tl_net:'สะสมสุทธิ',tl_balance:'ยอดปิด',tl_left:'เหลือ',tl_over:'เกิน',tl_vs_budget:'จาก budget',
     tl_kbank_alert:'📌 บิล KBANK ฿54,070 ครบกำหนด 25 มิ.ย. แต่เงินเดือนเข้า 27 มิ.ย. — ใช้ SCB ฿68k จ่ายก่อนได้ครับ',
     bill_jun:'บัตร KBANK + คืนเพื่อน',bill_jul:'บัตร SCB + AirPod งวด 2',
     bill_aug:'ค่าเทอม ปี 2 เทอม 1',bill_dec:'ค่าเทอม ปี 2 เทอม 2',
@@ -536,7 +536,7 @@ const STRINGS={
     cf_item:'Item',cf_amount:'Amount',
     cf_salary:'Net Salary (27th monthly)',cf_fixed_deduct:'Deduct Fixed Costs',
     cf_fixed_sub:'Tennis + AirPod + Parking + DCA',cf_living_deduct:'Deduct Living Expenses',cf_net_saving:'Net Monthly Savings',
-    tl_title:'Timeline Jun–Dec 2026',tl_month:'Month',tl_bill:'Big Bills',tl_net:'Net',tl_balance:'Closing',
+    tl_title:'Timeline Jun–Dec 2026',tl_month:'Month',tl_bill:'Big Bills',tl_net:'Net',tl_balance:'Closing',tl_left:'Left',tl_over:'Over',tl_vs_budget:'vs budget',
     tl_kbank_alert:'📌 KBANK bill ฿54,070 due Jun 25, salary arrives Jun 27 — use SCB ฿68k to pay first',
     bill_jun:'KBANK card + repay friend',bill_jul:'SCB card + AirPod 2nd installment',
     bill_aug:'Year 2 Semester 1 tuition',bill_dec:'Year 2 Semester 2 tuition',
@@ -625,6 +625,8 @@ function setLang(lang){
   if(typeof renderTracker==='function')renderTracker();
   if(typeof renderCatBudgetSettings==='function')renderCatBudgetSettings();
   if(typeof renderPortfolio==='function')renderPortfolio();
+  if(typeof renderBigBillsEditor==='function')renderBigBillsEditor();
+  if(typeof renderRecurringUI==='function')renderRecurringUI();
   if(typeof update==='function')update();
 }
 
@@ -777,6 +779,7 @@ const DEFAULT_HOLDINGS = [
 ];
 
 const PORT_COLORS = ['#1B5FA8','#1A7A56','#9A6200','#C0392B','#6B4C9A','#2E86AB','#E84855'];
+const STOCK_NAME_EN={'ธนาคารกสิกรไทย':'Kasikorn Bank','ธนาคารไทยพาณิชย์':'SCB X','ปตท.':'PTT','กัลฟ์ เอ็นเนอร์จี้ ดีเวลลอปเมนท์':'Gulf Energy'};
 
 let holdings = JSON.parse(localStorage.getItem('mek_holdings') || 'null') || DEFAULT_HOLDINGS;
 let livePrice = {}; // {ticker: price}
@@ -1006,8 +1009,9 @@ function renderPortfolio(){
           pnlDisplay = (pnl>=0?'+':'-')+' ฿'+Math.round(Math.abs(pnl)).toLocaleString();
         }
       }
+      const displayName=currentLang==='en'?(STOCK_NAME_EN[h.name]||h.name):h.name;
       html += '<tr>'
-        + '<td><div class="port-ticker">'+h.ticker+'</div><div class="port-name">'+h.name+' ('+h.shares+')</div></td>'
+        + '<td><div class="port-ticker">'+h.ticker+'</div><div class="port-name">'+displayName+' ('+h.shares+')</div></td>'
         + '<td>'+priceCell+'</td>'
         + '<td style="font-family:var(--mono);font-size:12px;">'+costStr+'</td>'
         + '<td style="font-family:var(--mono);font-size:12px;">'+valStr+'</td>'
@@ -2155,8 +2159,8 @@ function update(){
     if(isPast&&actualSpent!==null){
       const budgetLeft=living-actualSpent;
       const blColor=budgetLeft>=0?'#1A7A56':'#C0392B';
-      const blSign=budgetLeft>=0?'เหลือ +':'เกิน −';
-      budgetLeftHtml='<div style="font-size:10px;color:'+blColor+';margin-top:3px;">'+blSign+'฿'+Math.abs(Math.round(budgetLeft)).toLocaleString()+' จาก budget</div>';
+      const blSign=budgetLeft>=0?t('tl_left')+' +':t('tl_over')+' −';
+      budgetLeftHtml='<div style="font-size:10px;color:'+blColor+';margin-top:3px;">'+blSign+'฿'+Math.abs(Math.round(budgetLeft)).toLocaleString()+' '+t('tl_vs_budget')+'</div>';
     }
     const balHtml='<div style="font-size:10px;color:var(--text-3);">'+fmt(openBal)+'</div><div>'+fmt(bal)+'</div>';
     html+='<div class="tl-row '+cls+'"><div class="tl-month">'+(currentLang==='en'?(MONTHS_TH_EN[m.month]||m.month):m.month)+badge+'</div><div>'+bHtml+budgetLeftHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+balHtml+'</div></div>';
