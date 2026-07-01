@@ -2142,6 +2142,7 @@ function update(){
       actualSpent=allEntries.filter(e=>e.entry_date&&e.entry_date.startsWith(prefix)).reduce((s,e)=>s+Number(e.amt),0);
       monthNet=SALARY-fixed-actualSpent;
     }
+    const openBal=bal;
     bal+=monthNet-m.bill;
     totalActualSav+=monthNet;
     const cls=bal<60000?'crit':bal<100000?'low':'safe';
@@ -2150,7 +2151,8 @@ function update(){
       ?'<span style="font-size:9px;background:#1A7A5618;color:#1A7A56;border-radius:4px;padding:1px 5px;margin-left:4px;">จริง</span>'
       :'<span style="font-size:9px;background:var(--border-light);color:var(--text-3);border-radius:4px;padding:1px 5px;margin-left:4px;">คาด</span>';
     const nHtml=monthNet>=0?'<span class="pos">+฿'+Math.round(monthNet).toLocaleString()+'</span>':'<span class="neg">−฿'+Math.abs(Math.round(monthNet)).toLocaleString()+'</span>';
-    html+='<div class="tl-row '+cls+'"><div class="tl-month">'+(currentLang==='en'?(MONTHS_TH_EN[m.month]||m.month):m.month)+badge+'</div><div>'+bHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+fmt(bal)+'</div></div>';
+    const balHtml='<div style="font-size:10px;color:var(--text-3);">'+fmt(openBal)+'</div><div>'+fmt(bal)+'</div>';
+    html+='<div class="tl-row '+cls+'"><div class="tl-month">'+(currentLang==='en'?(MONTHS_TH_EN[m.month]||m.month):m.month)+badge+'</div><div>'+bHtml+'</div><div class="tl-net">'+nHtml+'</div><div class="tl-balance">'+balHtml+'</div></div>';
   });
   document.getElementById('timeline-body').innerHTML=html;
   const yearEnd=START+totalActualSav-bigBills.reduce((s,m)=>s+m.bill,0);
