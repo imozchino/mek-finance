@@ -2398,6 +2398,7 @@ async function loadEntries(){
     const resAll=await fetch(API+'/entries'+Q+'&order=entry_date.desc',{headers:HEADERS});
     allEntries=resAll.ok?await resAll.json():[];
     renderTracker();
+    update();
   }catch(e){
     setSyncStatus(t('sync_fail'),'#C0392B');
     document.getElementById('entry-list-container').innerHTML='<div class="empty-state">'+t('db_error')+'</div>';
