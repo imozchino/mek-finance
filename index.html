@@ -466,6 +466,7 @@ const STRINGS={
     ai_cancelled:'ยกเลิกแล้ว',
     ai_save_fail_msg:'บันทึกไม่สำเร็จ ลองใหม่ครับ',
     biometric_no_support:'อุปกรณ์นี้ไม่รองรับ Biometric ครับ',
+    no_recurring:'ยังไม่มีรายการประจำ',
   },
   en:{
     tab_planner:'Planner',tab_tracker:'Tracker',tab_portfolio:'Portfolio',tab_settings:'Settings',
@@ -571,6 +572,7 @@ const STRINGS={
     ai_cancelled:'Cancelled',
     ai_save_fail_msg:'Save failed. Please retry.',
     biometric_no_support:'This device does not support Biometrics',
+    no_recurring:'No recurring entries yet',
   }
 };
 
@@ -581,6 +583,8 @@ const CAT_DISPLAY={
 
 const MONTH_NAMES_EN=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS_TH_EN={มิถุนายน:'June',กรกฎาคม:'July',สิงหาคม:'August',กันยายน:'September',ตุลาคม:'October',พฤศจิกายน:'November',ธันวาคม:'December'};
+const BILL_LABEL_KEYS={'บัตร KBANK + คืนเพื่อน':'bill_jun','บัตร SCB + AirPod งวด 2':'bill_jul','ค่าเทอม ปี 2 เทอม 1':'bill_aug','ค่าเทอม ปี 2 เทอม 2':'bill_dec'};
+function billLabel(label){if(!label)return label;const key=BILL_LABEL_KEYS[label];return key?t(key):label;}
 
 let currentLang=localStorage.getItem('mek_lang')||'th';
 
@@ -2166,7 +2170,7 @@ function update(){
     bal+=monthNet-m.bill;
     totalActualSav+=monthNet;
     const cls=bal<60000?'crit':bal<100000?'low':'safe';
-    const bHtml=m.bill>0?'<div style="color:var(--red)">−฿'+m.bill.toLocaleString()+'</div><div class="tl-bill">'+(m.label||'')+'</div>':'<span style="color:var(--text-3)">—</span>';
+    const bHtml=m.bill>0?'<div style="color:var(--red)">−฿'+m.bill.toLocaleString()+'</div><div class="tl-bill">'+billLabel(m.label||'')+'</div>':'<span style="color:var(--text-3)">—</span>';
     const badge=isPast&&allEntries.length>0
       ?'<span style="font-size:9px;background:#1A7A5618;color:#1A7A56;border-radius:4px;padding:1px 5px;margin-left:4px;">จริง</span>'
       :'<span style="font-size:9px;background:var(--border-light);color:var(--text-3);border-radius:4px;padding:1px 5px;margin-left:4px;">คาด</span>';
@@ -2243,7 +2247,7 @@ function renderBigBillsEditor(){
     return '<div class="bills-editor-row">'
       +'<div style="font-size:12px;font-weight:500;color:var(--text-2);">'+mLabel+'</div>'
       +'<input class="bills-input" type="number" id="bb-amt-'+i+'" value="'+(b.bill||'')+'" placeholder="'+t('bills_amt_ph')+'" min="0"/>'
-      +'<input class="bills-input" type="text" id="bb-lbl-'+i+'" value="'+(b.label||'')+'" placeholder="'+t('bills_label_ph')+'"/>'
+      +'<input class="bills-input" type="text" id="bb-lbl-'+i+'" value="'+billLabel(b.label||'')+'" placeholder="'+t('bills_label_ph')+'"/>'
       +'</div>';
   }).join('');
 }
@@ -2276,8 +2280,8 @@ function renderRecurringUI(){
   if(!el)return;
   // populate cat select for new row
   const catSel=document.getElementById('rec-new-cat');
-  if(catSel&&catSel.options.length===0){ALL_CATS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=catD(c);catSel.appendChild(o);});}
-  if(recurringTemplates.length===0){el.innerHTML='<div style="font-size:12px;color:var(--text-3);padding:6px 0;" data-i18n="no_entries_month">ยังไม่มีรายการ</div>';return;}
+  if(catSel){catSel.innerHTML='';ALL_CATS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=catD(c);catSel.appendChild(o);});}
+  if(recurringTemplates.length===0){el.innerHTML='<div style="font-size:12px;color:var(--text-3);padding:6px 0;">'+t('no_recurring')+'</div>';return;}
   el.innerHTML=recurringTemplates.map((r,i)=>'<div class="rec-row">'
     +'<div style="font-weight:500;">'+r.desc+'<div style="font-size:10px;color:var(--text-3);">'+catD(r.cat)+'</div></div>'
     +'<div style="font-family:var(--mono);font-size:12px;color:var(--red);">−฿'+Number(r.amt).toLocaleString()+'</div>'
