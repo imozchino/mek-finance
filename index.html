@@ -458,6 +458,14 @@ const STRINGS={
     // Portfolio chart
     port_history_title:'ประวัติมูลค่า Portfolio',port_no_history:'กด Refresh เพื่อเริ่มบันทึกประวัติ',
     port_cost_basis:'ต้นทุน',
+    ai_thinking:'กำลังคิด...',
+    ai_greeting:'สวัสดีครับ! ถามเรื่องการเงิน หรือพิมพ์รายการที่ใช้จ่ายได้เลยครับ เช่น "ข้าวกลางวัน 60 บาท"',
+    ai_fallback:'สวัสดีครับ มีอะไรให้ช่วยไหมครับ',
+    ai_sorry:'ขอโทษครับ ตอบไม่ได้ ลองถามใหม่อีกครั้งนะครับ',
+    ai_error_msg:'เกิดข้อผิดพลาด ลองใหม่อีกครั้งครับ',
+    ai_cancelled:'ยกเลิกแล้ว',
+    ai_save_fail_msg:'บันทึกไม่สำเร็จ ลองใหม่ครับ',
+    biometric_no_support:'อุปกรณ์นี้ไม่รองรับ Biometric ครับ',
   },
   en:{
     tab_planner:'Planner',tab_tracker:'Tracker',tab_portfolio:'Portfolio',tab_settings:'Settings',
@@ -555,6 +563,14 @@ const STRINGS={
     // Portfolio chart
     port_history_title:'Portfolio Value History',port_no_history:'Refresh to start recording history',
     port_cost_basis:'Cost Basis',
+    ai_thinking:'Thinking...',
+    ai_greeting:'Hi! Ask about your finances or type an expense like "lunch 60 baht"',
+    ai_fallback:'Hi! How can I help with your finances?',
+    ai_sorry:"Sorry, couldn't respond. Please try again.",
+    ai_error_msg:'Error occurred. Please try again.',
+    ai_cancelled:'Cancelled',
+    ai_save_fail_msg:'Save failed. Please retry.',
+    biometric_no_support:'This device does not support Biometrics',
   }
 };
 
@@ -728,7 +744,7 @@ function onDescInput(val){
       +' onmousedown="selectSuggest(\'' +escapedDesc+ '\',\'' +item.cat+ '\',' +item.amt+ ')"'
       +' onmouseover="setSuggestActive('+i+')">'
       +'<span class="suggest-item-name">'+item.desc+'</span>'
-      +'<span class="suggest-item-meta">'+item.cat+' · ฿'+item.amt.toLocaleString()+'</span>'
+      +'<span class="suggest-item-meta">'+catD(item.cat)+' · ฿'+item.amt.toLocaleString()+'</span>'
       +'</div>';
   }).join('');
   dd.style.display='block';
@@ -1167,7 +1183,7 @@ let biometricEnabled = localStorage.getItem('mek_biometric') === '1';
 function toggleBiometric(){
   const on = document.getElementById('biometric-toggle').checked;
   if(on && !window.PublicKeyCredential){
-    alert('อุปกรณ์นี้ไม่รองรับ Biometric ครับ');
+    alert(t('biometric_no_support'));
     document.getElementById('biometric-toggle').checked = false;
     return;
   }
@@ -1391,13 +1407,13 @@ async function aiWelcome(){
       })
     });
     const data = await res.json();
-    const text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n') || 'สวัสดีครับ มีอะไรให้ช่วยไหมครับ';
+    const text = (data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n') || t('ai_fallback');
     loadingDiv.remove();
     aiAddMsg('bot', text);
     aiHistory.push({role:'assistant', content:text});
   }catch(e){
     loadingDiv.remove();
-    aiAddMsg('bot','สวัสดีครับ! ถามเรื่องการเงิน หรือพิมพ์รายการที่ใช้จ่ายได้เลยครับ เช่น "ข้าวกลางวัน 60 บาท"');
+    aiAddMsg('bot',t('ai_greeting'));
   }
 }
 
@@ -1414,7 +1430,7 @@ async function aiSend(){
   aiAddMsg('user', text);
   aiHistory.push({role:'user', content:text});
 
-  const loadingDiv = aiAddMsg('bot','กำลังคิด...');
+  const loadingDiv = aiAddMsg('bot',t('ai_thinking'));
   loadingDiv.classList.add('loading');
 
   try{
@@ -1450,12 +1466,12 @@ async function aiSend(){
       aiShowConfirm(parsed);
       aiHistory.push({role:'assistant', content: rawText});
     } else {
-      aiAddMsg('bot', rawText || 'ขอโทษครับ ตอบไม่ได้ ลองถามใหม่อีกครั้งนะครับ');
+      aiAddMsg('bot', rawText || t('ai_sorry'));
       aiHistory.push({role:'assistant', content: rawText});
     }
   }catch(e){
     loadingDiv.remove();
-    aiAddMsg('bot','เกิดข้อผิดพลาด ลองใหม่อีกครั้งครับ');
+    aiAddMsg('bot',t('ai_error_msg'));
   }
 }
 
@@ -1464,18 +1480,18 @@ function aiShowConfirm(entry){
   const box = document.createElement('div');
   box.className = 'ai-confirm-box';
   box.innerHTML = ''
-    + '<div class="ai-confirm-row"><span>รายการ</span><b>'+entry.description+'</b></div>'
-    + '<div class="ai-confirm-row"><span>จำนวน</span><b>฿'+Number(entry.amount).toLocaleString()+'</b></div>'
-    + '<div class="ai-confirm-row"><span>หมวด</span><b>'+entry.category+'</b></div>'
+    + '<div class="ai-confirm-row"><span>'+t('modal_item')+'</span><b>'+entry.description+'</b></div>'
+    + '<div class="ai-confirm-row"><span>'+t('col_amount')+'</span><b>฿'+Number(entry.amount).toLocaleString()+'</b></div>'
+    + '<div class="ai-confirm-row"><span>'+t('modal_cat')+'</span><b>'+catD(entry.category)+'</b></div>'
     + '<div class="ai-confirm-btns">'
-    + '<button class="ai-confirm-yes" id="ai-confirm-yes-btn">✓ บันทึก</button>'
-    + '<button class="ai-confirm-no" id="ai-confirm-no-btn">ยกเลิก</button>'
+    + '<button class="ai-confirm-yes" id="ai-confirm-yes-btn">✓ '+t('modal_save')+'</button>'
+    + '<button class="ai-confirm-no" id="ai-confirm-no-btn">'+t('modal_cancel')+'</button>'
     + '</div>';
   wrap.appendChild(box);
   wrap.scrollTop = wrap.scrollHeight;
 
   document.getElementById('ai-confirm-yes-btn').onclick = async function(){
-    box.innerHTML = '<div style="color:var(--text-3);">กำลังบันทึก...</div>';
+    box.innerHTML = '<div style="color:var(--text-3);">'+t('sync_saving')+'</div>';
     try{
       await fetch(API+'/entries'+Q, {
         method:'POST',
@@ -1488,14 +1504,14 @@ function aiShowConfirm(entry){
           note: entry.note || null
         })
       });
-      box.innerHTML = '<div style="color:var(--green);">✓ บันทึกแล้ว</div>';
+      box.innerHTML = '<div style="color:var(--green);">'+t('sync_saved')+'</div>';
       await loadEntries();
     }catch(e){
-      box.innerHTML = '<div style="color:var(--red);">บันทึกไม่สำเร็จ ลองใหม่ครับ</div>';
+      box.innerHTML = '<div style="color:var(--red);">'+t('ai_save_fail_msg')+'</div>';
     }
   };
   document.getElementById('ai-confirm-no-btn').onclick = function(){
-    box.innerHTML = '<div style="color:var(--text-3);">ยกเลิกแล้ว</div>';
+    box.innerHTML = '<div style="color:var(--text-3);">'+t('ai_cancelled')+'</div>';
   };
 }
 
