@@ -860,15 +860,6 @@ function removeHolding(i){
   renderPortfolio();
 }
 
-async function fetchSinglePrice(symbol){
-  // Yahoo Finance chart API — works directly from browser, no key needed
-  const url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval=1d&range=1d';
-  const r=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0'}});
-  if(!r.ok) return null;
-  const d=await r.json();
-  return d?.chart?.result?.[0]?.meta?.regularMarketPrice||null;
-}
-
 async function fetchPrices(){
   const btn = document.getElementById('port-refresh-btn');
   const status = document.getElementById('port-status');
@@ -877,15 +868,14 @@ async function fetchPrices(){
   status.textContent = t('port_connecting');
 
   try {
-    // Fetch each stock directly from Yahoo Finance in parallel
-    const fetches = holdings.map(async function(h){
-      const symbol = h.market==='TH' ? h.ticker+'.BK' : h.ticker;
-      try{
-        const price = await fetchSinglePrice(symbol);
-        if(price && price>0) livePrice[h.ticker]=price;
-      }catch(e){}
-    });
-    await Promise.all(fetches);
+    // Fetch via Cloudflare Pages Function (proxies Yahoo Finance with CORS)
+    const thSymbols = holdings.filter(h=>h.market==='TH').map(h=>h.ticker+'.BK');
+    const usSymbols = holdings.filter(h=>h.market==='US').map(h=>h.ticker);
+    const allSymbols = [...thSymbols, ...usSymbols].join(',');
+    const r = await fetch('/stock-price?symbols='+encodeURIComponent(allSymbols));
+    if(!r.ok) throw new Error('price fetch failed');
+    const d = await r.json();
+    Object.keys(d).forEach(function(ticker){ if(d[ticker]>0) livePrice[ticker]=d[ticker]; });
 
     // USD/THB rate
     try {
