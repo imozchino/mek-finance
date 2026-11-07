@@ -378,7 +378,7 @@ const STRINGS={
     sync_saving:'กำลังบันทึก...',sync_saved:'บันทึกแล้ว ✓',sync_save_fail:'บันทึกไม่สำเร็จ',
     sync_deleting:'กำลังลบ...',sync_deleted:'ลบแล้ว',sync_del_fail:'ลบไม่สำเร็จ',
     no_entries_month:'ยังไม่มีรายการเดือนนี้',no_entries_day:'ไม่มีรายการในวันที่เลือก',
-    loading:'กำลังโหลด...',db_error:'เชื่อมต่อฐานข้อมูลไม่ได้ กรุณาลองใหม่ครับ',
+    loading:'กำลังโหลด...',db_error:'เชื่อมต่อฐานข้อมูลไม่ได้ — Supabase อาจหยุดชั่วคราว กรุณาเข้า supabase.com เพื่อ resume project แล้วลองใหม่',
     confirm_delete:'ลบรายการนี้?',fill_required:'กรุณากรอกข้อมูลให้ครบครับ',
     notif_over80:'⚠️ ใช้งบไปเกิน 80% แล้ว — ระวังด้วยนะครับ!',budget_over:'งบเดือนนี้หมดแล้ว',
     days_left_tpl:'เหลืออีก {n} วัน',month_avg_tpl:'เฉลี่ยทั้งเดือน ({n} วัน)',
@@ -484,7 +484,7 @@ const STRINGS={
     sync_saving:'Saving...',sync_saved:'Saved ✓',sync_save_fail:'Save failed',
     sync_deleting:'Deleting...',sync_deleted:'Deleted',sync_del_fail:'Delete failed',
     no_entries_month:'No entries this month',no_entries_day:'No entries on selected day',
-    loading:'Loading...',db_error:'Could not connect to database. Please try again.',
+    loading:'Loading...',db_error:'Cannot connect to database — Supabase project may be paused. Visit supabase.com to resume it, then retry.',
     confirm_delete:'Delete this entry?',fill_required:'Please fill in all required fields.',
     notif_over80:'⚠️ Over 80% of budget used — please be careful!',budget_over:'Monthly budget exhausted',
     days_left_tpl:'{n} days left',month_avg_tpl:'Monthly avg ({n} days)',
@@ -860,28 +860,34 @@ function removeHolding(i){
   renderPortfolio();
 }
 
+async function fetchSinglePrice(symbol){
+  // Yahoo Finance chart API — works directly from browser, no key needed
+  const url='https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(symbol)+'?interval=1d&range=1d';
+  const r=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0'}});
+  if(!r.ok) return null;
+  const d=await r.json();
+  return d?.chart?.result?.[0]?.meta?.regularMarketPrice||null;
+}
+
 async function fetchPrices(){
   const btn = document.getElementById('port-refresh-btn');
   const status = document.getElementById('port-status');
   btn.classList.add('loading');
-   btn.innerHTML = '<span>⏳</span> '+t('port_btn_loading');
-   status.textContent = t('port_connecting');
+  btn.innerHTML = '<span>⏳</span> '+t('port_btn_loading');
+  status.textContent = t('port_connecting');
 
   try {
-    // All stocks via Supabase Edge Function (Yahoo Finance server-side)
-    const thSymbols = holdings.filter(h=>h.market==='TH').map(h=>h.ticker+'.BK');
-    const usSymbols = holdings.filter(h=>h.market==='US').map(h=>h.ticker);
-    const allSymbols = [...thSymbols, ...usSymbols].join(',');
-    const url = 'https://ahelypphgebpszhvmfrc.supabase.co/functions/v1/stock-price?symbols='+encodeURIComponent(allSymbols);
-    const r = await fetch(url);
-    if(!r.ok) throw new Error('Edge function failed');
-    const d = await r.json();
-    Object.keys(d).forEach(function(ticker){
-      if(d[ticker] > 0) livePrice[ticker] = d[ticker];
+    // Fetch each stock directly from Yahoo Finance in parallel
+    const fetches = holdings.map(async function(h){
+      const symbol = h.market==='TH' ? h.ticker+'.BK' : h.ticker;
+      try{
+        const price = await fetchSinglePrice(symbol);
+        if(price && price>0) livePrice[h.ticker]=price;
+      }catch(e){}
     });
+    await Promise.all(fetches);
 
-
-    // USD/THB
+    // USD/THB rate
     try {
       const fxRes = await fetch('https://open.er-api.com/v6/latest/USD');
       if(fxRes.ok){
@@ -890,16 +896,18 @@ async function fetchPrices(){
       }
     } catch(e){}
 
-    // Cache
     const nowFull = new Date().toLocaleString('th-TH',{timeZone:'Asia/Bangkok'});
     const now = new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'});
     localStorage.setItem('mek_prices', JSON.stringify(livePrice));
     localStorage.setItem('mek_usdthb', usdThb);
     localStorage.setItem('mek_price_time', nowFull);
-    status.textContent = tpl('port_updated_tpl',{t:now});
+
+    const gotAny = Object.keys(livePrice).length > 0;
+    status.textContent = gotAny ? tpl('port_updated_tpl',{t:now}) : t('port_status_error');
+
     renderPortfolio();
-    savePortfolioToServer();
-    // snapshot for history chart — compute totals after renderPortfolio updated them
+    if(gotAny) savePortfolioToServer();
+    // snapshot for history chart
     (function(){
       var thH=holdings.filter(h=>h.market==='TH'),usH=holdings.filter(h=>h.market==='US');
       var tv=0,tc=0;
